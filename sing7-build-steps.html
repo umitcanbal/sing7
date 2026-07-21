@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SING7 — Build Steps</title>
+  <style>
+    :root {
+      --page: #f4f4f2;
+      --paper: #ffffff;
+      --text: #202124;
+      --muted: #61656b;
+      --line: #d9dadd;
+      --soft: #f7f7f6;
+      --code: #f1f2f3;
+      --accent: #2f5f8f;
+      --good: #2f7d43;
+      --warn: #9a6b00;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--page);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.55;
+    }
+
+    .layout {
+      width: min(1100px, calc(100% - 32px));
+      margin: 24px auto 80px;
+    }
+
+    main {
+      min-width: 0;
+      padding: 36px 44px 60px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+    }
+
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin: 44px 0 12px; padding-top: 8px; border-top: 2px solid var(--text); font-size: 24px; }
+    h3.phase { margin: 34px 0 4px; font-size: 20px; color: var(--accent); }
+    h3.phase.two { color: var(--good); }
+    p { margin: 8px 0 14px; }
+    ul { margin-top: 8px; }
+    .muted { color: var(--muted); }
+
+    .verdict {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--good);
+      background: #eef7ee;
+    }
+
+    .decision {
+      margin: 14px 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      background: #f5f8fb;
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 12px 14px;
+      background: #fff9e8;
+      border: 1px solid #ead9a8;
+    }
+
+    pre {
+      margin: 0 0 14px;
+      padding: 14px;
+      overflow: auto;
+      background: var(--code);
+      border: 1px solid #d0d2d5;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: Consolas, Monaco, monospace;
+      font-size: .94em;
+    }
+
+    .flow {
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      font-family: Consolas, Monaco, monospace;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .steps { margin: 12px 0; padding: 0; list-style: none; }
+    .steps.p1 { counter-reset: step -1; }
+    .steps.p2 { counter-reset: step 7; }
+    .steps > li {
+      position: relative;
+      margin: 0 0 14px;
+      padding: 14px 16px 14px 60px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .steps > li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .steps.p2 > li::before { background: var(--good); }
+    .steps h4 { margin: 0 0 6px; font-size: 16px; }
+    .steps p { margin: 4px 0; }
+    .steps .risk { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: bold; color: var(--warn); }
+    .steps .risk.hi { color: #b23b2e; }
+    .steps .risk.done { color: var(--good); }
+
+    .tag { display:inline-block; padding:1px 7px; border-radius:3px; font-size:12px; font-weight:bold; }
+    .tag.zero { background:#f5e9d0; color:var(--warn); border:1px solid #ead9a8; }
+    .tag.done { background:#e5f0e5; color:var(--good); border:1px solid #bcd9bc; }
+    .tag.later { background:#eef1f5; color:var(--accent); border:1px solid #c7d4e2; }
+
+    .steps .lbl {
+      display:block; margin:12px 0 4px;
+      font-size:11px; font-weight:bold; letter-spacing:.05em; text-transform:uppercase;
+      color:var(--muted);
+    }
+    .steps .goal {
+      margin:8px 0; padding:9px 12px;
+      background:#f5f8fb; border-left:3px solid var(--accent);
+    }
+    .steps .goal .lbl { margin-top:0; color:var(--accent); }
+    .steps .result {
+      margin:12px 0 2px; padding:9px 12px;
+      background:#eef7ee; border-left:3px solid var(--good);
+    }
+    .steps .result .lbl { margin-top:0; color:var(--good); }
+    .steps ol.tasks { margin:4px 0 6px; padding-left:20px; }
+    .steps ol.tasks > li { margin:4px 0; }
+    .steps ol.tasks ul { margin:4px 0; padding-left:18px; list-style:disc; }
+    .steps ol.tasks ul li { margin:2px 0; }
+    .steps ul.check { margin:4px 0 6px; padding-left:4px; list-style:none; }
+    .steps ul.check > li { margin:4px 0; padding-left:22px; text-indent:-22px; }
+    .steps ul.check > li::before { content:"\2610"; margin-right:9px; color:var(--accent); font-weight:bold; }
+    .steps code { background:var(--code); padding:0 3px; border-radius:2px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+<main>
+  <h1>SING7 — Build Steps</h1>
+  <p class="muted">An actionable, ordered build plan for the SING7 MVP. Split into two phases: <strong>Phase 1</strong> gets a real, usable app running end-to-end; <strong>Phase 2</strong> adds the nice-to-haves once it works.</p>
+
+  <div class="verdict">
+    <strong>Sequencing principle:</strong> get a working app first — browse songs, open a song page, see chords over lyrics, auto-scroll. Anything not needed for that (chord diagrams, transpose) is <strong>Phase 2</strong>. There is <strong>no separate validator</strong>: the parser is the only guardrail — it returns an error on malformed input and the store skips those files.
+  </div>
+
+  <div class="note">
+    <strong>How to read each step:</strong>
+    <strong style="color:var(--accent)">Goal</strong> = one sentence, the point of the step ·
+    <strong>Implementation tasks</strong> = the concrete checklist ·
+    <strong>Done when…</strong> = acceptance criteria (tick every box before moving on) ·
+    <strong style="color:var(--good)">Result</strong> = the new capability you have.
+  </div>
+
+  <h3 class="phase">Phase 1 — get a working app</h3>
+  <ol class="steps p1">
+    <li>
+      <h4>Walking skeleton — a server that runs <span class="tag zero">START HERE</span></h4>
+      <div class="goal"><span class="lbl">Goal</span>Stand up a runnable Go project with an HTTP server you can <code>curl</code>, before any real logic exists.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Run <code>go mod init sing7</code> (or your module path).</li>
+        <li>Create the folder layout: <code>cmd/server/main.go</code>, plus empty packages you’ll fill later — <code>internal/song</code>, <code>internal/parser</code>, <code>internal/store</code>, <code>internal/httpapi</code>.</li>
+        <li>In <code>main.go</code>, start a <code>net/http</code> server on a configurable port (e.g. <code>:8080</code>).</li>
+        <li>Add <code>GET /api/songs</code> returning hardcoded JSON <code>{"songs":[]}</code>.</li>
+        <li>Add <code>GET /health</code> returning <code>200 OK</code>.</li>
+        <li>Run it: <code>go run ./cmd/server</code> and <code>curl</code> both endpoints.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li><code>go run ./cmd/server</code> starts with no error.</li>
+        <li><code>curl localhost:8080/api/songs</code> returns <code>{"songs":[]}</code>.</li>
+        <li><code>curl localhost:8080/health</code> returns 200.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>You have a running server and a project skeleton. Every later step now has a real place to live, and you can see changes run immediately.</div>
+    </li>
+    <li>
+      <h4>Confirm assumption A1 <span class="tag done">DONE</span></h4>
+      <p class="muted" style="margin-top:0">A decision gate, not a coding task — included for completeness because it unblocks the chord-diagram work in Phase 2.</p>
+      <div class="goal"><span class="lbl">Goal</span>Decide whether file chord definitions are per-song voicing <em>overrides</em> or redundant duplicates — it determines the chord-shape merge rule.</div>
+      <div class="result" style="background:#eef7ee"><span class="lbl">Resolution ✅ (2026-07-20)</span>They are <strong>per-song voicing overrides</strong>. The merge rule is fixed: <strong>file → base → none</strong>.</div>
+      <div class="result"><span class="lbl">Result / new capability</span>No design decision blocks the chord-shape work. The Phase 2 diagram step can be built exactly as specified; nothing else is waiting on a decision.</div>
+    </li>
+    <li>
+      <h4>Define the <code>Song</code> data model (the shared contract)</h4>
+      <div class="goal"><span class="lbl">Goal</span>Define the internal Go <code>Song</code> type that the parser produces, the store holds, and the DTO maps from — the spine everything else imports.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Create the <code>song</code> package (<code>internal/song/song.go</code>).</li>
+        <li>Define the structs from §3:
+          <ul>
+            <li><code>Song{ Slug, Title, Artist, Meta, Strum, ChordShapes, Sections }</code></li>
+            <li><code>Meta{ Key, Capo, Time, Tempo, Year, Notes }</code></li>
+            <li><code>Strum{ Label, Strokes, Beats }</code></li>
+            <li><code>ChordShape{ Frets []int, Source string }</code>, held in <code>map[string]ChordShape</code></li>
+            <li><code>Section{ Label *string, Lines []Line }</code> — <code>Label == nil</code> means untagged</li>
+            <li><code>Line{ ChordsOnly bool, Parts []Part }</code>, <code>Part{ Chord, Text string }</code></li>
+          </ul>
+        </li>
+        <li>Fix the zero-value conventions: <code>Label *string</code> for null, <code>Capo</code> defaults to 0, muted string = <code>-1</code> in <code>Frets</code>.</li>
+        <li>Add a slug helper (title + artist → kebab-case).</li>
+        <li>Keep the package dependency-free — it must import none of your other packages.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li><code>go build ./internal/song</code> compiles standalone.</li>
+        <li>A tiny test can construct the §3 worked example (Don’t Panic) literally from the structs.</li>
+        <li>Nothing in the package imports parser, store, or http.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>You have the shared contract. Every downstream package can now be written against a concrete type instead of a sketch. <span class="muted">Per §7 this internal model is <strong>never serialized directly</strong> — a separate DTO (Step 5) maps from it, so it can evolve freely.</span></div>
+    </li>
+    <li>
+      <h4>Build and prove the parser <span class="tag" style="background:#f7e0dd;color:#b23b2e;border:1px solid #e3b7b0">HIGHEST RISK</span></h4>
+      <div class="goal"><span class="lbl">Goal</span>Build a standalone parser that converts a song <code>.txt</code> file into the internal <code>Song</code> model — and rejects malformed files with an error.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Create the parser package.</li>
+        <li>Implement the parsing pipeline (§4):
+          <ul>
+            <li>parse title and artist</li>
+            <li>parse metadata / footer</li>
+            <li>classify every line (ordered rules; <strong>lyric is a positive match, not a fallback</strong>)</li>
+            <li>build sections (no tag → one implicit section, <code>label = null</code>)</li>
+            <li>detect chord lines, lyric lines, chords-only lines</li>
+            <li>parse chord definitions</li>
+            <li>parse strumming blocks</li>
+            <li>detect &amp; skip TAB blocks (don’t parse as chords/lyrics)</li>
+            <li>pair chord lines with lyric lines (column-snap rule for attachment)</li>
+            <li>build the final <code>Song</code></li>
+          </ul>
+        </li>
+        <li>Fold the necessary format checks in here (title line, two fences, line-type recognition, etc.) and <strong>return an error</strong> when a file breaks them — this is the app’s only guardrail, so it lives in the parser, not a separate validator.</li>
+        <li>Write focused unit tests for the trickiest parsing rules.</li>
+        <li>Choose several representative songs and write detailed assertions on the parsed output.</li>
+        <li>Add a corpus test that parses all 28 songs. Use §6.3 as the map: known-tricky files (<code>Lucie - Medvídek.txt</code> irregular fence, trailing-note files) plus the listed clean reference files.</li>
+        <li>Run the complete suite: <code>go test ./...</code></li>
+        <li>Fix parsing issues until all tests pass.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li>Every song parses successfully.</li>
+        <li>Representative songs produce the expected <code>Song</code> structure.</li>
+        <li>The parser returns errors for malformed input instead of silently producing incorrect output.</li>
+        <li>All parser tests pass.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>A standalone parser callable directly from Go — <code>song, err := parser.Parse(data)</code> — that returns a populated <code>Song</code> (or an error) for a given <code>.txt</code> file. Fully tested and independent of the HTTP server, store, and frontend. It is also the guardrail: bad files error out here and get skipped by the store.</div>
+      <span class="risk hi">Highest risk in the whole plan — find format surprises here, on day one, not through the server.</span>
+    </li>
+    <li>
+      <h4>In-memory store (the “database”)</h4>
+      <div class="goal"><span class="lbl">Goal</span>On startup, turn the <code>akordy</code> folder into a queryable in-memory index of songs.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Create a <code>store</code> package holding <code>map[slug]Song</code> + a search list (title/artist).</li>
+        <li>Implement <code>Load(dir)</code>: walk <code>*.txt</code>; for each file — <code>parser.Parse</code> → on error, <strong>log and skip</strong>; else insert.</li>
+        <li>Build the search index (lowercased title + artist) for <code>?q=</code>.</li>
+        <li>Expose <code>All()</code>, <code>Get(slug)</code>, <code>Search(q)</code>.</li>
+        <li>Log a load summary: N loaded, M skipped (with reasons).</li>
+        <li>Test <code>Load</code> against the real <code>akordy</code> folder: expected count loaded, known-bad files handled.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li>Loading the real folder indexes the expected number of songs; bad files are skipped with a logged reason (no crash).</li>
+        <li><code>Get(slug)</code> returns a full song; <code>Search("panic")</code> finds Don’t Panic.</li>
+        <li>Startup prints a clear load summary.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>The app’s “database.” The whole library is queryable in memory by slug and by search term — ready for the API to serve.</div>
+    </li>
+    <li>
+      <h4>Read-only REST endpoints + response DTO</h4>
+      <div class="goal"><span class="lbl">Goal</span>Serve the in-memory store over HTTP through a stable DTO, replacing the Step 0 stub.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Define response DTOs in <code>httpapi</code> (<code>SongDTO</code>, <code>SongListItemDTO</code>) — <strong>separate types from <code>Song</code></strong>.</li>
+        <li>Write mappers <code>toSongDTO(Song)</code> / <code>toListItemDTO(Song)</code>.</li>
+        <li>Implement handlers backed by the store:
+          <ul>
+            <li><code>GET /api/songs?q=</code> → list/search (list-item DTOs)</li>
+            <li><code>GET /api/songs/{slug}</code> → one full song DTO (404 if missing)</li>
+            <li><code>POST /api/reload</code> (optional) → re-run store <code>Load</code></li>
+          </ul>
+        </li>
+        <li>Replace the Step 0 hardcoded handler with the real one.</li>
+        <li>Set JSON content-type; handle not-found and the query param.</li>
+        <li>Test handlers with <code>httptest</code>: known slug → 200, unknown → 404, <code>?q=</code> filters.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li><code>curl /api/songs</code> returns the real library; <code>?q=panic</code> filters it.</li>
+        <li><code>curl /api/songs/coldplay-dont-panic</code> returns the full parsed song as a DTO.</li>
+        <li>Unknown slug → 404. The internal <code>Song</code> is never serialized directly.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>The backend is feature-complete for the MVP: a real, queryable, read-only song API over HTTP. The frontend can now be built against a live contract.</div>
+    </li>
+    <li>
+      <h4>Frontend — the core player experience</h4>
+      <div class="goal"><span class="lbl">Goal</span>Build the Next.js UI that lets a player find a song, open it, read chords over lyrics, and auto-scroll — the usable MVP.</div>
+      <span class="lbl">Implementation tasks</span> <span class="muted">(in dependency order)</span>
+      <ol class="tasks">
+        <li>Scaffold the Next.js app; wire an API client to the Go backend.</li>
+        <li>Browse/search page (consumes <code>GET /api/songs?q=</code>).</li>
+        <li>Individual song page (route by slug; consumes <code>GET /api/songs/{slug}</code>).</li>
+        <li>Render <code>sections → lines → parts</code> as chords-over-lyrics.</li>
+        <li>Auto-scroll: hands-free scroll at a user-controlled speed.</li>
+        <li>Strum grid: render strokes/beats when the song has them.</li>
+        <li>Print CSS + browser print.</li>
+      </ol>
+      <p class="muted" style="margin:6px 0 0">Deferred to Phase 2: chord-diagram popups and transpose.</p>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li>You can search, select a song, and land on its page.</li>
+        <li>Chords render correctly above the right words.</li>
+        <li>Auto-scroll works; strum grid shows when present; print looks right.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>A usable SING7: browse the library, open any song, and play along with correctly placed chords while it scrolls hands-free.</div>
+    </li>
+    <li>
+      <h4>Package &amp; deploy the MVP</h4>
+      <div class="goal"><span class="lbl">Goal</span>Ship the working app as reproducible Docker containers.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Dockerfile for the Go backend; bake <code>akordy/</code> into the image (<code>COPY akordy/ /app/songs/</code>) — Option A.</li>
+        <li>Dockerfile for the Next.js frontend.</li>
+        <li><code>docker-compose.yml</code> with both containers, no DB.</li>
+        <li>Configure ports, the backend URL for the frontend, and the song-folder path.</li>
+        <li>Build and run the compose stack; smoke-test the running app.</li>
+        <li>(Later) add <code>/api/reload</code> + Option B for song updates without a rebuild.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li><code>docker compose up</code> brings up both containers with no database.</li>
+        <li>The app is reachable and serves real songs end-to-end from the baked repo.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>A reproducible, deployable SING7 MVP — the whole library and app ship as an image you can run anywhere. <strong>This is the milestone: a working app is live.</strong></div>
+    </li>
+  </ol>
+
+  <h3 class="phase two">Phase 2 — enhancements (after the app works)</h3>
+  <p class="muted">Real features, but the app is fully usable without them. Build them once Phase 1 is live.</p>
+  <ol class="steps p2">
+    <li>
+      <h4>Chord diagrams (base dictionary + merge + renderer) <span class="tag later">PHASE 2</span></h4>
+      <div class="goal"><span class="lbl">Goal</span>Show a finger-position diagram in a popup when a player taps a chord.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Backend: create a <code>chords</code> package with a base dictionary — common open/barre shapes (C, G, D, A, E, Am, Em, Dm, F…).</li>
+        <li>Backend: merge per song — <strong>file definition wins → else base → else mark missing</strong>; tag each shape <code>Source: "file" | "base"</code>.</li>
+        <li>Backend: include the merged <code>chordShapes</code> in the song DTO; expose the missing-diagram list.</li>
+        <li>Frontend: React SVG renderer that draws a shape from <code>frets</code> (<code>-1</code> = muted).</li>
+        <li>Frontend: popup on chord tap; show name-only when the chord has no shape.</li>
+        <li>Test the merge branches; spot-check a few rendered diagrams.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li>Tapping a chord shows its diagram; a file voicing overrides the base shape.</li>
+        <li>A chord with no shape anywhere shows just the name — no crash.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>Players can see how to finger any chord in the song. (This is the whole reason the base dictionary exists — hence it lives here, not in the MVP core.)</div>
+      <span class="risk done">A1 confirmed, so the merge rule is final.</span>
+    </li>
+    <li>
+      <h4>Transpose <span class="tag later">PHASE 2</span></h4>
+      <div class="goal"><span class="lbl">Goal</span>Let a player shift every chord in a song up or down by semitones.</div>
+      <span class="lbl">Implementation tasks</span>
+      <ol class="tasks">
+        <li>Build a reusable <code>transpose</code> module: parse a name → <code>{ root, suffix, bass? }</code> → shift root and bass mod 12 → re-spell → reattach the untouched suffix.</li>
+        <li>Enharmonic policy: if <code>meta.key</code> is known, spell to that key’s accidentals; else default to sharps. Keep capo independent (it changes sounding pitch, not written names).</li>
+        <li>Unit-test roots, accidentals, slash chords, wrap-around (B+1 → C), and both spelling policies.</li>
+        <li>Frontend: a +/- control that re-renders every chord through the module.</li>
+      </ol>
+      <span class="lbl">Done when…</span>
+      <ul class="check">
+        <li><code>+2</code> raises every chord a tone with correct spelling; suffixes (<code>m7</code>, <code>sus4</code>, <code>add9</code>) pass through untouched.</li>
+        <li>The control updates the whole song live.</li>
+      </ul>
+      <div class="result"><span class="lbl">Result / new capability</span>Players can play any song in a comfortable key.</div>
+    </li>
+  </ol>
+
+  <h2>The one thing to internalize</h2>
+  <div class="decision">
+    <strong>Prove the parser against the real 28 files before building anything else.</strong> The store, API, and even the frontend render are mechanical once the data model is right. The parser is where the format’s surprises live (bilingual labels, mid-word chord columns, the TAB block, held chords with no chord line, untagged songs) — and it’s your only guardrail, so a test harness over the corpus is your cheapest insurance.
+  </div>
+
+  <div class="flow">
+    <strong>Phase 1:</strong> scaffold → A1&nbsp;✓ → data model → parser+tests → store → REST+DTO → frontend core → Docker<br>
+    <strong>Phase 2:</strong> chord diagrams → transpose
+  </div>
+
+  <p class="muted">Want me to start on Steps 0 → 2 → 3: scaffold the Go module (Step 0), define the <code>Song</code> struct (Step 2), and write the parser with a test that runs over all 28 files in <code>akordy/</code> (Step 3)? That’s the fastest way to de-risk the whole plan.</p>
+</main>
+</div>
+</body>
+</html>
