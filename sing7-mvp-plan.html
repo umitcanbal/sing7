@@ -413,12 +413,14 @@ Capo  2nd fret
           <tr><td>Label carries a BPM</td><td><code>Strumming (122 BPM)</code>, <code>Intro / verse (92 BPM)</code>, <code>1st part intro &amp; verse (144 BPM)</code></td><td>Coldplay, Radiohead, Foo Fighters</td></tr>
           <tr><td>Longer grids — 5, 8, even 12 slots</td><td><code>1 &amp; 2 &amp; 3 &amp; 4 &amp; 5 &amp; 6 &amp; 7 &amp; 8 &amp; 9 &amp; 10 &amp; 11 &amp; 12 &amp;</code></td><td>Foo Fighters</td></tr>
           <tr><td>Extra glyphs beyond ↓ ↑</td><td><code>↓ · x ↑ · ↑ ↓ ↑</code> — <code>▼</code> accent, <code>x</code> mute, <code>·</code> rest</td><td>Coldplay, Foo Fighters</td></tr>
+          <tr><td>No arrows at all — a whole row of only rests &amp; mutes</td><td><code>· x · x x x x x · x · x x x x x</code></td><td>Yellowcard</td></tr>
           <tr><td>Several patterns in one file</td><td>main + an <code>extended</code> outro; or verse / chorus / bridge</td><td>Coldplay, Radiohead, Blink-182</td></tr>
           <tr><td>One-line summary in the footer instead of a grid</td><td><code>Strum   intro/verse ↓ · ↓ · ↓ ↑ ↑ ↓; pre-chorus/chorus ↓ · ↓ · ↓ ↓ ↑ ↑ ↓ ↑</code></td><td>4 files</td></tr>
           <tr><td>Prose only — no grid at all</td><td><code>„Medvídku probuď se…"  spíš 4× ↓ na řádek</code></td><td>Lucie — Medvídek</td></tr>
         </tbody>
       </table>
       <p class="muted">The tidy label / strokes / beats triple is the common case, not a guarantee: the label may be absent, the length varies, and one file only describes the strum in words.</p>
+      <p class="muted"><strong>Parser note:</strong> all strum blocks are collected flat into <code>Song.Strum</code> — a section-specific pattern keeps its label but not a structural link to its section. Tracked in §6.3 <em>Known parser limitations</em>.</p>
     </div>
   </details>
 
@@ -456,7 +458,7 @@ Capo  2nd fret
           <tr><td>Prose alternate instead of frets</td><td><code>D/F#: 2 x 0 2 3 x  (or thumb on 2nd fret E)</code></td></tr>
         </tbody>
       </table>
-      <p class="muted">Parse rule: after the six tokens, anything in <code>( … )</code> is a human note — keep it, don't read it as frets. (Only 2 files carry such a note.)</p>
+      <p class="muted">Parse rule: only the six fret tokens are read. A trailing <code>( … )</code> alternate voicing is <strong>currently discarded</strong> — <code>ChordShape</code> has no field for a second voicing — tracked in §6.3 <em>Known parser limitations</em>. (Only 2 files carry such a note.)</p>
     </div>
   </details>
 
@@ -510,30 +512,46 @@ All that we fought for</pre>
     </div>
   </details>
 
-  <h3>2.6 Chords-only line <span class="muted" style="font-weight:normal">— tag E</span></h3>
-  <p>A chord line with <strong>no lyric under it</strong> — an intro, interlude, or instrumental run. Two written forms, and it often carries a repeat hint in parentheses.</p>
-  <div class="example-title">Both forms, with margin annotations</div>
-  <pre>C   C/B   Am   C/B                    ← bare form
-| Am | C | Fmaj7 | Fmaj7 |   (×2)      ← pipe form (3 files)
-| C | C | Am | F G |   (riff ×2)       ← annotation = a repeat/how-to hint</pre>
-  <p class="muted">Margin annotations like <code>(×2)</code>, <code>(×4 takty)</code> (“bars”), or <code>(riff ×2)</code> appear in 12 of 28 files. They are shown as-is next to the row.</p>
+  <h3>2.6 Chord names <span class="muted" style="font-weight:normal">— used in (C), (E), (G)</span></h3>
+  <p>The same chord-name grammar appears in three places — chord-shape definitions (C), chords-only lines (E), and chord lines (G): a root note, an optional accidental, an optional quality/extension (<code>m</code>, <code>maj7</code>, <code>sus4</code>, <code>add9</code>…), and an optional <code>/bass</code>. One notation variation is worth recording on its own, because it is a real exception to the “root A–G” rule and a genuine trap for any future file-normalizer.</p>
+
+  <details class="variations">
+    <summary>See chord-name variations (normalizer input)</summary>
+    <div class="vb">
+      <p><strong>Czech/German note name <code>H</code>.</strong> Some Czech files name the B-natural chord <code>H</code> (so B minor is <code>Hm</code>) — e.g. <em>Severní vítr</em> (<code>Hm: x x 0 4 3 2</code>, and the <code>Hm</code> in its chord lines). In this system <code>H</code> = B natural.</p>
+      <table>
+        <thead><tr><th>Variation</th><th>Real example</th><th>Normalizer note</th></tr></thead>
+        <tbody>
+          <tr><td>Czech/German <code>H</code> means B natural</td><td><em>Severní vítr</em>: <code>Hm</code>, <code>H</code></td><td>Safe to map <code>H → B</code>.</td></tr>
+          <tr><td><code>B</code> is <strong>not</strong> uniformly B♭ in this corpus</td><td><em>Medvídek</em>: <code>B: x 2 4 4 4 2</code> — a <strong>B-major</strong> shape, i.e. B natural</td><td>Do <strong>not</strong> blindly remap <code>B</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="note"><strong>Why this is a trap.</strong> The strict Czech/German system uses <code>H</code> = B natural <em>and</em> <code>B</code> = B♭. But this corpus is <strong>mixed</strong>: it borrows <code>H</code> while still writing <code>B</code> for B natural (see <em>Medvídek</em>’s B-major shape above). So a normalizer may safely map <code>H → B</code>, but must <strong>not</strong> letter-swap <code>B</code> — in files we don’t yet have, telling B natural from B♭ could require the fret shape or the song’s key. The parser itself sidesteps all of this: for classification it just accepts <code>H</code> as a valid root, since what pitch it sounds is a transpose-time (Phase 2) concern.</div>
+    </div>
+  </details>
+
+  <h3>2.7 Chords-only line <span class="muted" style="font-weight:normal">— tag E</span></h3>
+  <p>A row of chord names with <strong>no lyric under it</strong> — an intro, interlude, or instrumental run. It uses the same chord grammar as a chord line (G); it is “chords-only” purely because nothing sits beneath it. The common form is bare chord names spaced by column:</p>
+  <div class="example-title">The common form</div>
+  <pre>C   C/B   Am   C/B</pre>
 
   <details class="variations">
     <summary>See other variations of (E) — chords-only line</summary>
     <div class="vb">
-      <p>Two genuinely different line shapes:</p>
+      <p>Two ways it deviates from the bare form — and they can combine, e.g. <code>| Am | C | Fmaj7 | Fmaj7 |&nbsp;&nbsp;(×2)</code>:</p>
       <table>
-        <thead><tr><th>Shape</th><th>Real example</th></tr></thead>
+        <thead><tr><th>Variation</th><th>Real example</th><th>Seen in</th></tr></thead>
         <tbody>
-          <tr><td>Bare, spaced by column</td><td><code>C   C/B   Am   C/B</code></td></tr>
-          <tr><td>Pipe / bar form</td><td><code>| Am | C | Fmaj7 | Fmaj7 |</code>, down to <code>| C |</code></td></tr>
+          <tr><td>Pipe / bar form — chords wrapped in <code>|</code> bars</td><td><code>| Am | C | Fmaj7 | Fmaj7 |</code>, down to <code>| C |</code></td><td>3 files (e.g. Coldplay)</td></tr>
+          <tr><td>Trailing parenthetical hint — a repeat / how-to note</td><td><code>(×2)</code>, <code>(×4 takty)</code> (“bars”), <code>(riff ×2½ a fade out)</code></td><td>12 of 28 files</td></tr>
         </tbody>
       </table>
-      <p>Either shape may carry a <strong>trailing free-text hint in parentheses</strong> — a count <code>(×2)</code>, a bar count <code>(×4 takty)</code>, or a whole sentence <code>(riff ×2½ a fade out)</code>. Shown as-is; not parsed.</p>
+      <p class="muted">Intended handling: the annotation is shown as-is; the <code>|</code> bars are just visual grouping.</p>
+      <div class="note"><strong>Handled.</strong> The parser keeps the trailing <code>(…)</code> annotation as-is in the line's <code>Annotation</code> field (e.g. <code>(×2)</code>, <code>(×4 takty)</code>), so the repeat/how-to hint is preserved for display. The <code>|</code> bars are dropped — they are pure visual grouping.</div>
     </div>
   </details>
 
-  <h3>2.7 Metadata footer <span class="muted" style="font-weight:normal">— tags H + I, in 28 / 28</span></h3>
+  <h3>2.8 Metadata footer <span class="muted" style="font-weight:normal">— tags H + I, in 28 / 28</span></h3>
   <p>Every file ends with a footer fenced by two lines of <code>─</code> (U+2500). Between them are <code>Label&nbsp;&nbsp;&nbsp;value</code> pairs. Labels are bilingual and open-ended (~40 distinct across the corpus); the common ones:</p>
   <table>
     <thead><tr><th>Field</th><th>Label (English / Czech)</th><th>In how many</th><th>Example value</th></tr></thead>
@@ -618,8 +636,8 @@ All that we fought for</pre>
       "lines": [
         {
           "parts": [
-            { "chord": "Am", "text": "Bones, sinking " },
-            { "chord": "C",  "text": "like stones" }
+            { "chord": "Am", "text": "Bones, sinking l" },
+            { "chord": "C",  "text": "ike stones" }
           ]
         },
         {
@@ -629,10 +647,16 @@ All that we fought for</pre>
           ]
         }
       ]
+    },
+    {
+      "label": "Interlude",
+      "lines": [
+        { "chordsOnly": true, "annotation": "(×2)", "parts": [ { "chord": "Am" }, { "chord": "C" }, { "chord": "Fmaj7" }, { "chord": "Fmaj7" } ] }
+      ]
     }
   ]
 }</pre>
-      <p class="muted">A song with no section tags is emitted as a single section with <code>"label": null</code>. Chord names in parts are resolved to shapes via <code>chordShapes</code>, which is built base-first with file overrides (§5).</p>
+      <p class="muted">A song with no section tags is emitted as a single section with an empty <code>"label": ""</code> (the internal model uses an empty string; the response DTO maps it to <code>null</code> in the API — §7). Chord names in parts are resolved to shapes via <code>chordShapes</code>, which is built base-first with file overrides (§5). Note the first verse line splits <code>"Bones, sinking l"</code> / <code>"ike stones"</code>: the parser attaches each chord at its <strong>exact source column</strong>, and this file happens to place <code>C</code> one column into "like" — a file-alignment issue tracked in §6.3 <em>Known inconsistencies</em>.</p>
     </div>
   </details>
 
@@ -642,15 +666,15 @@ All that we fought for</pre>
     <tbody>
       <tr><td><code>title</code>, <code>artist</code></td><td>Title line (tag A)</td><td><strong>Always</strong> (28/28)</td><td>Display + slug.</td></tr>
       <tr><td><code>slug</code></td><td>Derived from title + artist</td><td><strong>Always</strong></td><td>Stable URL and map key.</td></tr>
-      <tr><td><code>meta.key</code></td><td>Footer Key / Tónina</td><td>27/28 (else <code>null</code>)</td><td>Transpose reference, display.</td></tr>
+      <tr><td><code>meta.key</code></td><td>Footer Key / Tónina</td><td>27/28 (else <code>""</code>)</td><td>Transpose reference, display.</td></tr>
       <tr><td><code>meta.capo</code></td><td>Footer Capo</td><td>18/28 (else <code>0</code>)</td><td>Capo hint, transpose.</td></tr>
-      <tr><td><code>meta.time</code></td><td>Footer Time / Takt</td><td>20/28 (else <code>null</code>)</td><td>Display.</td></tr>
-      <tr><td><code>meta.tempo</code></td><td>Footer Tempo</td><td>9/28 (else <code>null</code>)</td><td>Display.</td></tr>
-      <tr><td><code>meta.year</code></td><td>Trailing <code>(YYYY)</code> on footer <code>Artist</code>/<code>Autoři</code></td><td>10/28 (else <code>null</code>)</td><td>Display.</td></tr>
+      <tr><td><code>meta.time</code></td><td>Footer Time / Takt</td><td>20/28 (else <code>""</code>)</td><td>Display.</td></tr>
+      <tr><td><code>meta.tempo</code></td><td>Footer Tempo</td><td>9/28 (else <code>""</code>)</td><td>Display.</td></tr>
+      <tr><td><code>meta.year</code></td><td>Trailing <code>(YYYY)</code> on footer <code>Artist</code>/<code>Autoři</code></td><td>10/28 (else <code>0</code>)</td><td>Display.</td></tr>
       <tr><td><code>meta.notes</code></td><td>Unmapped footer labels</td><td>Optional (else <code>[]</code>)</td><td>Keep footer info we don't model yet, losslessly.</td></tr>
       <tr><td><code>strum</code></td><td>Strum block(s) (tag B)</td><td>9/28 (else <code>[]</code>)</td><td>Strokes/beats grid; may be per-section.</td></tr>
       <tr><td><code>chordShapes</code></td><td>Base dictionary + file definitions</td><td><strong>Always</strong> (base); file voicings 19/28</td><td>Draw diagrams; <code>source</code> marks base vs file.</td></tr>
-      <tr><td><code>sections[].label</code></td><td>Section tag, or <code>null</code></td><td>15/28 (else <code>null</code>)</td><td><code>null</code> = song has no tags (single implicit section).</td></tr>
+      <tr><td><code>sections[].label</code></td><td>Section tag, or empty</td><td>15/28 (else <code>""</code>)</td><td>Empty = song has no tags (single implicit section). The DTO maps <code>""</code> → <code>null</code> in the API (§7).</td></tr>
       <tr><td><code>sections[].lines[].parts</code></td><td>Chord + lyric lines</td><td><strong>Always</strong></td><td>Place each chord above the right text.</td></tr>
       <tr><td><code>chordsOnly</code></td><td>Chord line with no lyric under it</td><td>Per-line flag</td><td>Render an intro/interlude progression row.</td></tr>
     </tbody>
@@ -671,8 +695,8 @@ unknown label → append to meta.notes[]</pre>
 
   <div class="example-title">Step 3 — Walk the body, classifying each line</div>
   <pre>Each line is matched against a fixed, ORDERED list of line-types; the first
-rule that matches wins. A line that matches nothing is NOT assumed to be a
-lyric — it is handed to the validator as unrecognised.
+rule that matches wins. Lyric is the FALLBACK: any non-blank line that
+matches no structural type below is treated as a lyric.
 
   [Section]                       → section tag      (D)
   Name: x 3 2 0 1 0               → chord definition  (C)  → file shape override
@@ -680,29 +704,27 @@ lyric — it is handed to the validator as unrecognised.
   1 & 2 & 3 & 4 &                 → strum beats       (B)
   e|-0-  B|-0- … (6 string rows)  → TAB block              → recognised, skipped
   every token is a valid chord    → chord row         (E/G)
-  has real word text              → lyric             (F)
-  none of the above               → UNRECOGNISED → validator, never a lyric
+  none of the above (non-blank)   → lyric             (F, the fallback)
 
-  (no [Section] seen yet → open one implicit section, label = null)
+  (no [Section] seen yet → open one implicit section, label = "")
 
 Then a second pass pairs each chord row with the line beneath it:
   chord row + lyric under it   → chord line (G)  → build parts (Step 4)
   chord row, nothing under it  → chordsOnly line (E)
   lyric with no chord above it → held-chord line (F, allowed — see §2.5)</pre>
 
-  <div class="note"><strong>Lyric is a positive match, not a fallback.</strong> A “chord row” requires <em>every</em> whitespace token to match the chord grammar (root A–G, optional accidental, quality, extension, optional <code>/bass</code>) or a <code>|</code> bar; a “lyric” requires actual word text. Anything that is neither a recognised structural type (tag, fence, definition, strum, TAB) nor plausible lyric text is surfaced by the validator instead of being swallowed into the song — which is exactly how the All Time Low TAB block gets caught rather than rendered as words.</div>
+  <div class="note"><strong>Lyric is the fallback, not a positive match.</strong> A “chord row” requires <em>every</em> whitespace token to match the chord grammar (root A–G — plus the Czech/German <code>H</code> = B, see §2.6 — optional accidental, quality, extension, optional <code>/bass</code>) or a <code>|</code> bar. Everything non-blank that matches no structural type (tag, fence, definition, strum, TAB, chord row) falls through to lyric. A positional rule (“a lyric must follow a chord line”) was rejected: no deterministic rule separates a held-chord lyric from a stray line — both are plain text in arbitrary spots, and a held lyric can even follow a blank line. <strong>Consequence:</strong> stray lines in non-standard files render as lyrics rather than being flagged — those files are listed in §6.3 <em>Known inconsistencies</em>.</div>
 
   <div class="example-title">Step 4 — Turn a chord line + lyric line into parts</div>
   <pre>chord line:  "Am              C"      columns: Am@0, C@16
 lyric line:  "Bones, sinking like stones"
 
-split the lyric at each chord column (snap to the nearest
-word gap when a column lands mid-word):
+split the lyric at each chord's exact column — no snapping:
 
-Part 1: chord = "Am", text = "Bones, sinking "
-Part 2: chord = "C",  text = "like stones"</pre>
+Part 1: chord = "Am", text = "Bones, sinking l"   (columns 0–16)
+Part 2: chord = "C",  text = "ike stones"         (column 16 → end)</pre>
 
-  <div class="note"><strong>Snapping is a judgment call.</strong> Real chord sheets occasionally place a chord column mid-word. The parser needs one clear rule (e.g. snap to the preceding space); the <em>files</em> remain the source of truth, and the validator flags anything ambiguous so a human fixes the file rather than the parser guessing.</div>
+  <div class="note"><strong>Exact position, no guessing.</strong> Each chord attaches at the precise column it occupies in the file — a chord placed mid-word stays mid-word (here <code>C</code> sits one column into "like"). The <em>file</em> is the source of truth for alignment; the parser never snaps a chord to a nearby word boundary. When a file's columns are off (chords landing mid-word), that is a file-alignment issue to fix in the <code>.txt</code>, tracked in §6.3 <em>Known inconsistencies</em>.</div>
 
   <h2 id="chord-diagrams">5. Chords: diagrams &amp; transpose</h2>
   <p class="muted">Two things the app does with chords: <strong>draw</strong> them (diagrams, §5.1–5.2) and <strong>shift</strong> them (transpose, §5.3). Both interpret the chord name as a small domain object.</p>
@@ -744,10 +766,12 @@ A/C#    → root "A"   suffix ""      bass "C#"</pre>
   <h2 id="validation">6. Validation</h2>
   <p>A validator checks a <code>.txt</code> file against the format rules before it is trusted. It is separate from the parser: the parser turns a file into data; the validator confirms the file is well-formed first.</p>
 
+  <div class="note"><strong>Status — this section is a design, not current behavior.</strong> There is <strong>no separate validator</strong> (settled decision): the parser is the only guardrail, and it is deliberately <em>lenient</em>. The one hard error today is a missing/malformed title line (rule&nbsp;S1) — that file is logged and skipped. <strong>Every other rule below is currently tolerated, not enforced</strong>: the parser skips, ignores, or falls back rather than rejecting. Most importantly for lyrics, <strong>rule&nbsp;B1 is inverted</strong> — a line that matches no structural type is treated <em>as a lyric</em> (the fallback; see §4), never flagged. Read §6.1 as the intended spec for a future validator/normalizer; read §4 for what the parser actually does.</div>
+
   <div class="choice-grid">
     <div class="box">
       <h4>When the server loads (primary — the only enforced guardrail)</h4>
-      <p>On startup the parser reads every file and validates it first. A malformed file is <strong>logged and skipped</strong>, not half-parsed or crash-inducing, so one bad file never takes down the library. There is <strong>no CI on the <code>akordy</code> repo</strong> (and none is planned), so this load-time check is the only guarantee the running app actually has.</p>
+      <p>On startup the parser reads every file. A file it cannot parse (today: a malformed title line) is <strong>logged and skipped</strong>, not half-parsed or crash-inducing, so one bad file never takes down the library. There is <strong>no CI on the <code>akordy</code> repo</strong> (and none is planned), so this load-time check is the only guarantee the running app actually has.</p>
     </div>
     <div class="box">
       <h4>When songs are edited (optional convenience)</h4>
@@ -774,7 +798,7 @@ A/C#    → root "A"   suffix ""      bass "C#"</pre>
       <tr><td>C2</td><td>All definitions in a file share the same token count (same string count / instrument).</td><td>Warning</td></tr>
       <tr><td>C3</td><td>The definition name is a valid chord name (§2.3 grammar).</td><td>Warning</td></tr>
 
-      <tr><td>B1</td><td rowspan="6">Body / lines</td><td>Every body line matches a known line-type; an <strong>unrecognised line is never silently treated as lyric</strong>.</td><td>Error</td></tr>
+      <tr><td>B1</td><td rowspan="6">Body / lines</td><td><em>Intended:</em> every body line matches a known line-type. <strong>Not enforced — the parser does the opposite:</strong> a line matching no structural type (tag, fence, definition, strum, TAB, chord row) <em>is</em> treated as a lyric — the fallback (§4). So "what is a lyric?" = any non-blank line that is none of the structural types. Stray lines this swallows in odd files are tracked in §6.3.</td><td>— (not enforced)</td></tr>
       <tr><td>B2</td><td>A chord line resolves — it is followed by a lyric line, another chord line, or a blank; a section never ends on a dangling, unresolved chord line.</td><td>Error</td></tr>
       <tr><td>B3</td><td>Hard tab (U+0009) on a <strong>chord line, or a lyric line that has a chord line above it</strong> — corrupts column alignment (parser counts 1 column, editor renders several).</td><td>Error</td></tr>
       <tr><td>B4</td><td>Hard tab elsewhere in the body (a lyric line with no chord above it) — sloppy but harmless to alignment.</td><td>Warning</td></tr>
@@ -786,7 +810,7 @@ A/C#    → root "A"   suffix ""      bass "C#"</pre>
       <tr><td>F3</td><td>Chords used in the body but resolvable to no shape (neither file definition nor base dictionary) — the missing-diagram list.</td><td>Report</td></tr>
     </tbody>
   </table>
-  <p class="muted"><strong>Deliberately not a rule:</strong> section tags are <em>not</em> required — a song with none is valid and parsed as one implicit section (<code>label = null</code>). Column alignment that lands a chord mid-word is <em>not</em> rejected either; the parser's snap rule (§4) handles it, and B5 only flags lines that look structurally wrong.</p>
+  <p class="muted"><strong>Deliberately not a rule:</strong> section tags are <em>not</em> required — a song with none is valid and parsed as one implicit section (<code>label = ""</code>). Column alignment that lands a chord mid-word is <em>not</em> rejected either; the parser attaches the chord at its exact column (§4), and B5 only flags lines that look structurally wrong.</p>
 
   <h3>6.2 Dev-time validation CLI</h3>
   <p>Since nothing validates songs automatically, we ship a small command-line tool so a developer or song curator can check files <strong>locally, before committing</strong>. It's the "optional convenience" run from §6 — fast feedback that stops a malformed file from silently vanishing at load time.</p>
@@ -816,11 +840,25 @@ exit code 0 = all valid · non-zero = at least one ERROR (warnings don't fail)</
   <h4>Known inconsistencies (fix in the files, not the parser)</h4>
   <p>These exist in the songs today and are why the <em>files</em> — not the parser — stay the source of truth. The parser tolerates them; a curator should clean them up.</p>
   <table>
-    <thead><tr><th>File</th><th>Issue</th><th>Action</th></tr></thead>
+    <thead><tr><th>File</th><th>Issue</th><th>Parser today</th><th>Action</th></tr></thead>
     <tbody>
-      <tr><td><code>Lucie - Medvídek.txt</code></td><td>Irregular footer fence — only one line matched a clean fence scan.</td><td>Re-check its two <code>────</code> fences.</td></tr>
-      <tr><td><code>Ani k stáru</code>, <code>Buty - Nad stádem koní</code></td><td>A note line appears <em>after</em> the closing fence.</td><td>Fold into the footer, or accept as a tolerated trailing note (rule S4).</td></tr>
-      <tr><td>Various</td><td>Chord-definition spacing after the colon varies (2–3 spaces).</td><td>Cosmetic; <code>normalize_sections.py</code> / <code>reformat_songs.py</code> can standardize.</td></tr>
+      <tr><td><code>Lucie - Medvídek.txt</code></td><td>Irregular footer fence — a single trailing fence (with a blank line above it), not the usual two.</td><td><strong>Handled</strong>, via a quirk-specific single-fence branch.</td><td>Re-check its two <code>────</code> fences. Fixing it lets the parser drop that branch — see the <code>NORMALIZE-REMOVABLE</code> marker in <code>internal/parser/parser.go</code>.</td></tr>
+      <tr><td><code>Ani k stáru</code>, <code>Buty - Nad stádem koní</code></td><td>A note line appears <em>after</em> the closing fence.</td><td><strong>Handled</strong> — anything after the last fence is dropped (rule S4).</td><td>Fold into the footer, or accept as a tolerated trailing note.</td></tr>
+      <tr><td><code>Ani k stáru</code>, <code>Tisíc mil - Waldemar Matuška.txt</code></td><td>A metadata line sits <em>above</em> the opening fence — <code>Kytary …</code>, <code>Poznámka …</code> (Ani, lines 63–64), <code>Autoři …</code> (Tisíc mil, line 78).</td><td><strong>Not handled.</strong> It lands in the body and renders as a stray lyric line; that metadata is lost (the real between-fences footer still parses).</td><td>Move the line inside the fences so it is read as metadata.</td></tr>
+      <tr><td><code>Radiohead - Creep.txt</code></td><td>Chord shapes written inline, <code>·</code>-separated, with two-digit frets — <code>G&nbsp;&nbsp;3 5 5 4 3 3 · B&nbsp;&nbsp;7 9 9 8 7 7 · …</code> (lines 10, 13) — instead of one <code>Name: f f f f f f</code> per line.</td><td><strong>Not handled.</strong> Not parsed as shapes (Creep ends up with zero chord shapes); the fret rows and their labels render as stray lyric lines.</td><td>Rewrite as standard one-per-line chord definitions (§2.3); until then the shapes fall to the Phase-2 base dictionary.</td></tr>
+      <tr><td>Various (many files)</td><td>Chords land <em>mid-word</em> — a chord's first character sits inside a word rather than on the syllable's first letter. E.g. <code>Coldplay - Don't Panic.txt</code> places <code>C</code> one column into "like", so the verse splits <code>"Bones, sinking l"</code> / <code>"ike stones"</code>. A quick scan found ~500 such columns across the corpus.</td><td><strong>Handled faithfully</strong> — the parser attaches each chord at its <em>exact</em> column (§4, no snapping), so a mis-aligned file renders the chord mid-word exactly as written.</td><td>Nudge the chord to the syllable's first column in the <code>.txt</code>. (Until fixed, chords simply render where the file puts them — not wrong, just as-authored.)</td></tr>
+      <tr><td>Various</td><td>Chord-definition spacing after the colon varies — authors pad it so the fret columns line up, so it depends on the name's length. See <code>Coldplay - Don't Panic.txt</code>: <code>Fmaj9:&nbsp;1&nbsp;3&nbsp;3&nbsp;0&nbsp;1&nbsp;x</code> (1 space) vs <code>C:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;3&nbsp;2&nbsp;0&nbsp;1&nbsp;0</code> (5 spaces).</td><td><strong>Handled</strong> — the parser splits on any run of whitespace, so padding is irrelevant.</td><td>Cosmetic; <code>normalize_sections.py</code> / <code>reformat_songs.py</code> can standardize.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Known parser limitations (fix in the parser, not the files)</h4>
+  <p>The mirror image of the list above: here the <em>file</em> is valid, but the current parser/model does not yet fully represent it. These are fixed in <strong>code</strong>, never by editing songs.</p>
+  <table>
+    <thead><tr><th>Limitation</th><th>Detail</th><th>Status / fix</th></tr></thead>
+    <tbody>
+      <tr><td>Guitar-TAB blocks are not rendered</td><td>§4 — a TAB staff block (e.g. <code>All Time Low</code>) is recognised and <em>skipped</em>; the model has no field for tablature, so its notes are dropped.</td><td><strong>By design (MVP):</strong> TAB display is out of scope for now; revisit if it is wanted.</td></tr>
+      <tr><td>Section-specific strums lose their section link</td><td>§2.2 — every strum block is collected flat into <code>Song.Strum</code>. A strum that appears under a section (e.g. Don't Panic's <code>[Outro]</code> "Strumming extended") keeps only its free-text label, not a structural link to that section, so the app can't say "play this pattern for the outro."</td><td><strong>Gap to fix:</strong> attach the strum to its section (or add a section reference on <code>Strum</code>), if section-specific strumming ever needs to render in place.</td></tr>
+      <tr><td>Chord-definition alternate voicings are dropped</td><td>§2.3 — a definition may carry a trailing alternate voicing, e.g. <code>Fadd#11: 1 3 3 2 0 1&nbsp;&nbsp;(or x33201)</code> or <code>D/F#: 2 x 0 2 3 x (or thumb on 2nd fret E)</code> (ACDC, Blink). The parser keeps only the 6 primary frets and discards the <code>(or …)</code> alternate — <code>ChordShape</code> has no field for a second voicing.</td><td><strong>Accepted for now:</strong> the alternate is intentionally dropped. Fix, if wanted, by adding an alternate-voicing field to <code>ChordShape</code> and filling it (same shape as the <code>(×N)</code> annotation fix).</td></tr>
     </tbody>
   </table>
 
@@ -889,8 +927,8 @@ exit code 0 = all valid · non-zero = at least one ERROR (warnings don't fail)</
         "lines": [
           {
             "parts": [
-              { "chord": "Am", "text": "Bones, sinking " },
-              { "chord": "C",  "text": "like stones" }
+              { "chord": "Am", "text": "Bones, sinking l" },
+              { "chord": "C",  "text": "ike stones" }
             ]
           }
         ]
@@ -971,7 +1009,7 @@ serve REST from the index</pre>
       <tr><td>Validation</td><td>One validator, run at server load (enforced) and via an opt-in dev-time CLI (§6.2). No CI.</td></tr>
       <tr><td>Sections</td><td>Optional. A song with no tags is one implicit unlabeled section.</td></tr>
       <tr><td>Chord shapes</td><td>Base dictionary + per-file overrides; missing shapes reported, not fatal.</td></tr>
-      <tr><td>Chord-to-lyric</td><td>Ordered parts derived from column alignment, with a defined snap rule.</td></tr>
+      <tr><td>Chord-to-lyric</td><td>Ordered parts derived from column alignment; each chord attaches at its exact source column.</td></tr>
       <tr><td>Metadata</td><td>Map known labels to fields (bilingual); keep unknown labels as notes.</td></tr>
       <tr><td>API</td><td>Read-only REST: list/search, get-by-slug. Response is a DTO mapped from the internal model. No reload endpoint in the MVP.</td></tr>
       <tr><td>Instruments</td><td>Guitar first (6-value shapes). Ukulele/piano later.</td></tr>

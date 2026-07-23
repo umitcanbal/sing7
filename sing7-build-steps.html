@@ -216,11 +216,11 @@
             <li><code>Meta{ Key, Capo, Time, Tempo, Year, Notes }</code></li>
             <li><code>Strum{ Label, Strokes, Beats }</code></li>
             <li><code>ChordShape{ Frets []int, Source string }</code>, held in <code>map[string]ChordShape</code></li>
-            <li><code>Section{ Label *string, Lines []Line }</code> — <code>Label == nil</code> means untagged</li>
-            <li><code>Line{ ChordsOnly bool, Parts []Part }</code>, <code>Part{ Chord, Text string }</code></li>
+            <li><code>Section{ Label string, Lines []Line }</code> — an empty <code>Label</code> means untagged</li>
+            <li><code>Line{ ChordsOnly bool, Parts []Part, Annotation string }</code>, <code>Part{ Chord, Text string }</code></li>
           </ul>
         </li>
-        <li>Fix the zero-value conventions: <code>Label *string</code> for null, <code>Capo</code> defaults to 0, muted string = <code>-1</code> in <code>Frets</code>.</li>
+        <li>Fix the zero-value conventions: <code>Label string</code> (empty = untagged), <code>Capo</code> defaults to 0, muted string = <code>-1</code> in <code>Frets</code>.</li>
         <li>Add a slug helper (title + artist → kebab-case).</li>
         <li>Keep the package dependency-free — it must import none of your other packages.</li>
       </ol>
@@ -243,7 +243,7 @@
             <li>parse title and artist</li>
             <li>parse metadata / footer</li>
             <li>classify every line (ordered rules; <strong>lyric is a positive match, not a fallback</strong>)</li>
-            <li>build sections (no tag → one implicit section, <code>label = null</code>)</li>
+            <li>build sections (no tag → one implicit section, <code>label = ""</code>)</li>
             <li>detect chord lines, lyric lines, chords-only lines</li>
             <li>parse chord definitions</li>
             <li>parse strumming blocks</li>

@@ -37,12 +37,20 @@ func TestDontPanicExample(test *testing.T) {
 				Label: "Verse 1",
 				Lines: []Line{
 					{Parts: []Part{
-						{Chord: "Am", Text: "Bones, sinking "},
-						{Chord: "C", Text: "like stones"},
+						{Chord: "Am", Text: "Bones, sinking l"},
+						{Chord: "C", Text: "ike stones"},
 					}},
 					{Parts: []Part{
 						{Text: "All that we "},
 						{Chord: "Fmaj7", Text: "fought for"},
+					}},
+				},
+			},
+			{
+				Label: "Interlude",
+				Lines: []Line{
+					{ChordsOnly: true, Annotation: "(×2)", Parts: []Part{
+						{Chord: "Am"}, {Chord: "C"}, {Chord: "Fmaj7"}, {Chord: "Fmaj7"},
 					}},
 				},
 			},
@@ -67,6 +75,9 @@ func TestDontPanicExample(test *testing.T) {
 	}
 	if !dontPanic.Sections[0].Lines[0].ChordsOnly {
 		test.Error("intro line should be chords-only")
+	}
+	if got := dontPanic.Sections[2].Lines[0].Annotation; got != "(×2)" {
+		test.Errorf("interlude annotation = %q, want \"(×2)\"", got)
 	}
 }
 

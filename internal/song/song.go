@@ -56,6 +56,7 @@ type Section struct {
 type Line struct {
 	ChordsOnly bool
 	Parts      []Part
+	Annotation string // trailing "(…)" hint on a chord row, kept as-is (e.g. "(×2)"); "" when none
 }
 
 // Part is a single chord attached to the text that follows it. Either field
