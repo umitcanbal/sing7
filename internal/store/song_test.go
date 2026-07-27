@@ -18,9 +18,9 @@ const corpusDir = "../../akordy"
 const wantCorpusCount = 28
 
 func TestLoadCorpusIndexesEverySong(t *testing.T) {
-	library, summary, err := Load(corpusDir)
+	library, summary, err := LoadSongs(corpusDir)
 	if err != nil {
-		t.Fatalf("Load(%q) returned error: %v", corpusDir, err)
+		t.Fatalf("LoadSongs(%q) returned error: %v", corpusDir, err)
 	}
 	if summary.Loaded != wantCorpusCount {
 		t.Errorf("loaded %d songs, want %d", summary.Loaded, wantCorpusCount)
@@ -34,9 +34,9 @@ func TestLoadCorpusIndexesEverySong(t *testing.T) {
 }
 
 func TestAllIsSortedByArtistThenTitle(t *testing.T) {
-	library, _, err := Load(corpusDir)
+	library, _, err := LoadSongs(corpusDir)
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("LoadSongs: %v", err)
 	}
 
 	all := library.All()
@@ -61,9 +61,9 @@ func TestAllIsSortedByArtistThenTitle(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	library, _, err := Load(corpusDir)
+	library, _, err := LoadSongs(corpusDir)
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("LoadSongs: %v", err)
 	}
 
 	got, ok := library.Get("coldplay-dont-panic")
@@ -80,9 +80,9 @@ func TestGet(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
-	library, _, err := Load(corpusDir)
+	library, _, err := LoadSongs(corpusDir)
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("LoadSongs: %v", err)
 	}
 
 	// A title substring finds the song.
@@ -117,9 +117,9 @@ func TestLoadSkipsUnparseableFile(t *testing.T) {
 	// skips it. (A blank first line is the one thing Parse errors on.)
 	writeFile(t, dir, "bad.txt", "\n\njust some words\n")
 
-	library, summary, err := Load(dir)
+	library, summary, err := LoadSongs(dir)
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("LoadSongs: %v", err)
 	}
 	if summary.Loaded != 1 {
 		t.Errorf("loaded %d, want 1", summary.Loaded)
@@ -143,9 +143,9 @@ func TestLoadKeepsFirstOnDuplicateSlug(t *testing.T) {
 	writeFile(t, dir, "a-first.txt", "Song — Artist\n\nC\nkeep me\n")
 	writeFile(t, dir, "b-second.txt", "Song — Artist\n\nG\ndrop me\n")
 
-	library, summary, err := Load(dir)
+	library, summary, err := LoadSongs(dir)
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("LoadSongs: %v", err)
 	}
 	if summary.Loaded != 1 {
 		t.Errorf("loaded %d, want 1", summary.Loaded)
@@ -167,10 +167,10 @@ func TestLoadKeepsFirstOnDuplicateSlug(t *testing.T) {
 
 func TestLoadMissingDirIsEmptyNotError(t *testing.T) {
 	// Glob of a nonexistent directory matches nothing and is not an OS error,
-	// so Load yields an empty library rather than failing.
-	library, summary, err := Load(filepath.Join(t.TempDir(), "does-not-exist"))
+	// so LoadSongs yields an empty library rather than failing.
+	library, summary, err := LoadSongs(filepath.Join(t.TempDir(), "does-not-exist"))
 	if err != nil {
-		t.Fatalf("Load of missing dir returned error: %v", err)
+		t.Fatalf("LoadSongs of missing dir returned error: %v", err)
 	}
 	if summary.Loaded != 0 || len(library.All()) != 0 {
 		t.Errorf("expected empty library, got loaded=%d all=%d", summary.Loaded, len(library.All()))
@@ -196,7 +196,7 @@ func writeFile(t *testing.T, dir, name, content string) {
 	}
 }
 
-func searchFindsSlug(s *Store, query, slug string) bool {
+func searchFindsSlug(s *SongStore, query, slug string) bool {
 	for _, sng := range s.Search(query) {
 		if sng.Slug == slug {
 			return true

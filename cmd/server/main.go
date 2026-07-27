@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"sing7/internal/httpapi"
 	"sing7/internal/store"
 )
 
@@ -14,7 +15,7 @@ func main() {
 
 	// Load parses the whole folder into memory and logs its own load summary;
 	// it only errors when the directory itself can't be scanned.
-	library, _, err := store.Load(songsDir)
+	library, _, err := store.LoadSongs(songsDir)
 	if err != nil {
 		log.Fatalf("loading songs: %v", err)
 	}
@@ -22,7 +23,10 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handleHealth)
-	mux.HandleFunc("GET /api/songs", handleSongs)
+
+	// SongAPI serves the loaded library over /api/songs and /api/songs/{slug}.
+	songAPI := httpapi.NewSongAPI(library)
+	songAPI.Register(mux)
 
 	address := ":8080"
 	log.Printf("SING7 server listening on %s", address)
@@ -37,11 +41,4 @@ func main() {
 func handleHealth(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 	_, _ = writer.Write([]byte("OK"))
-}
-
-// handleSongs is a stub returning an empty list. The library is already loaded
-// in main; Step 5 (REST + DTO) passes it to this handler to serve real songs.
-func handleSongs(writer http.ResponseWriter, request *http.Request) {
-	writer.Header().Set("Content-Type", "application/json")
-	_, _ = writer.Write([]byte(`{"songs":[]}`))
 }

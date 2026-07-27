@@ -1,6 +1,6 @@
 // Package store holds the parsed song library in memory and serves queries by
 // slug and by search term. On load it parses the akordy folder, logging and
-// skipping files the parser rejects. It is the app's "database": once Load
+// skipping files the parser rejects. It is the app's "database": once LoadSongs
 // returns, the whole library lives in RAM and every request is served from it.
 package store
 
@@ -16,9 +16,9 @@ import (
 	"sing7/internal/song"
 )
 
-// Store is the in-memory song library. After Load it is read-only, so its
+// SongStore is the in-memory song library. After LoadSongs it is read-only, so its
 // methods are safe to call concurrently from HTTP handlers without locking.
-type Store struct {
+type SongStore struct {
 	bySlug  map[string]song.Song // slug → song, for O(1) Get
 	ordered []indexed            // every song, sorted for stable All()/Search() output
 }
@@ -36,20 +36,20 @@ type Skip struct {
 	Reason string
 }
 
-// Summary is the outcome of a Load: how many songs were indexed and which files
-// were skipped and why. Load also logs this, but returning it lets callers
+// Summary is the outcome of a LoadSongs call: how many songs were indexed and
+// which files were skipped and why. LoadSongs also logs this, but returning it lets callers
 // (and tests) inspect the result without scraping log output.
 type Summary struct {
 	Loaded  int
 	Skipped []Skip
 }
 
-// Load walks dir for *.txt files, parses each into a song, and builds the
+// LoadSongs walks dir for *.txt files, parses each into a song, and builds the
 // in-memory index. A file the parser rejects — or whose slug collides with one
 // already loaded — is logged and skipped, never fatal: the parser is the app's
-// only guardrail, so a bad file simply doesn't enter the library. Load returns
+// only guardrail, so a bad file simply doesn't enter the library. LoadSongs returns
 // an error only when the directory itself cannot be scanned.
-func Load(dir string) (*Store, Summary, error) {
+func LoadSongs(dir string) (*SongStore, Summary, error) {
 	pattern := filepath.Join(dir, "*.txt")
 	paths, err := filepath.Glob(pattern)
 	if err != nil {
@@ -59,7 +59,7 @@ func Load(dir string) (*Store, Summary, error) {
 	// wins" a stable, reproducible outcome when two files share a slug.
 	sort.Strings(paths)
 
-	library := &Store{bySlug: make(map[string]song.Song, len(paths))}
+	library := &SongStore{bySlug: make(map[string]song.Song, len(paths))}
 	var summary Summary
 
 	for _, path := range paths {
@@ -94,7 +94,7 @@ func Load(dir string) (*Store, Summary, error) {
 // artist-then-title. The slug already encodes "artist title" kebab-cased —
 // lowercased and with diacritics folded — so ordering by slug gives exactly
 // that alphabetisation for free, with no separate collation key to maintain.
-func (s *Store) buildIndex() {
+func (s *SongStore) buildIndex() {
 	s.ordered = make([]indexed, 0, len(s.bySlug))
 	for _, sng := range s.bySlug {
 		s.ordered = append(s.ordered, indexed{
@@ -110,7 +110,7 @@ func (s *Store) buildIndex() {
 // All returns every song, sorted artist-then-title. The returned slice is a
 // fresh copy, so a caller may reorder or truncate it without disturbing the
 // store's own index.
-func (s *Store) All() []song.Song {
+func (s *SongStore) All() []song.Song {
 	result := make([]song.Song, len(s.ordered))
 	for i, entry := range s.ordered {
 		result[i] = entry.song
@@ -119,7 +119,7 @@ func (s *Store) All() []song.Song {
 }
 
 // Get returns the full song for a slug. ok is false when no song has that slug.
-func (s *Store) Get(slug string) (sng song.Song, ok bool) {
+func (s *SongStore) Get(slug string) (sng song.Song, ok bool) {
 	sng, ok = s.bySlug[slug]
 	return sng, ok
 }
@@ -127,7 +127,7 @@ func (s *Store) Get(slug string) (sng song.Song, ok bool) {
 // Search returns the songs whose title or artist contains query, matched
 // case-insensitively as a substring, in the same artist-then-title order as
 // All. An empty or whitespace-only query returns the whole library.
-func (s *Store) Search(query string) []song.Song {
+func (s *SongStore) Search(query string) []song.Song {
 	needle := strings.TrimSpace(strings.ToLower(query))
 	if needle == "" {
 		return s.All()
