@@ -1,5 +1,5 @@
 // Package store holds the parsed song library in memory and serves queries by
-// slug and by search term. On load it parses the akordy folder, logging and
+// slug and by search term. On load it parses the songs folder, logging and
 // skipping files the parser rejects. It is the app's "database": once LoadSongs
 // returns, the whole library lives in RAM and every request is served from it.
 package store

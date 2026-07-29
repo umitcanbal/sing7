@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const corpusDir = "../../akordy"
+const corpusDir = "../../songs"
 
 // TestCorpusParses parses every real song file and requires that each one
 // succeeds and produces a plausible song: a title, an artist, a slug, and at

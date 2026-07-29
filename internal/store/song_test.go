@@ -9,8 +9,8 @@ import (
 	"sing7/internal/song"
 )
 
-// corpusDir is the real akordy folder relative to this package.
-const corpusDir = "../../akordy"
+// corpusDir is the real songs folder relative to this package.
+const corpusDir = "../../songs"
 
 // wantCorpusCount is how many songs the real corpus should index. All 28 files
 // have a valid title line, and the parser tolerates every softer quirk, so none

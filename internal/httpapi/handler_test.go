@@ -10,7 +10,7 @@ import (
 	"sing7/internal/store"
 )
 
-const corpusDir = "../../akordy"
+const corpusDir = "../../songs"
 
 // newTestServer loads the real corpus and returns a mux with the webrpc handler mounted.
 func newTestServer(t *testing.T) *http.ServeMux {

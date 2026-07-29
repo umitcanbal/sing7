@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	songsDir := "akordy"
+	songsDir := "songs"
 
 	// Load parses the whole folder into memory and logs its own load summary;
 	// it only errors when the directory itself can't be scanned.

@@ -122,7 +122,7 @@ func foldDiacritic(character rune) rune {
 }
 
 // diacriticFolds covers the accented lowercase letters that appear in the
-// akordy corpus (Czech) plus common Latin-1 accents.
+// songs corpus (Czech) plus common Latin-1 accents.
 var diacriticFolds = map[rune]rune{
 	// a
 	'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ã': 'a', 'å': 'a',

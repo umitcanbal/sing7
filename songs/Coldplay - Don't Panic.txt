@@ -1,0 +1,92 @@
+Don't Panic — Coldplay
+
+Strumming (122 BPM)
+↓ · x ↑ · ↑ ↓ ↑
+1 & 2 & 3 & 4 &
+
+Fmaj9: 1 3 3 0 1 x
+Fmaj7: 1 3 3 2 1 x
+Am:    x 0 2 2 1 0
+C:     x 3 2 0 1 0
+Dm:    x x 0 2 3 1
+Dm6:   x x 0 2 0 1
+G:     3 2 0 0 3 3
+
+[Intro]
+Fmaj7  Fmaj9
+
+[Verse 1]
+Am              C
+Bones, sinking like stones
+        Fmaj7
+All that we fought for
+Am              C
+Homes, places we've grown
+        Fmaj7
+All of us are done for
+
+[Chorus]
+Dm              Dm6             Am
+    And we live in a beautiful world
+    G
+        Yeah we do, yeah we do
+Dm              Dm6             Fmaj7
+    We live in a beautiful world
+
+[Verse 2]
+Am              C
+Bones, sinking like stones
+        Fmaj7
+All that we fought for
+Am              C
+Homes, places we've grown
+        Fmaj7
+All of us are done for
+
+[Chorus]
+Dm              Dm6             Am
+    And we live in a beautiful world
+    G
+        Yeah we do, yeah we do
+Dm              Dm6             Fmaj7
+    We live in a beautiful world
+
+[Interlude]
+| Am | C | Fmaj7 | Fmaj7 |   (×2)
+
+[Chorus]
+Dm              Dm6             Am
+    And we live in a beautiful world
+    G
+        Yeah we do, yeah we do
+Dm              Dm6             Fmaj7
+    We live in a beautiful world
+
+[Interlude]
+| Am | C | Fmaj7 | Fmaj7 |   (×2)
+
+[Outro]
+Strumming extended (122 BPM)
+↓ · x ↑ · ↑ x ↑ · ↑ x ↑ · ↑ ↓ ↑
+1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 &
+
+Am              C
+Oh, all that I know
+                   Fmaj7
+There's nothing here to run from
+Am              C               Fmaj7
+Cos yeah, everybody here got somebody to lean on
+
+────────────────────────────────────────
+Source    pdf/dont panic accordi.pdf
+Artist    Coldplay (2000)
+Key       F
+Time      4/4
+Tempo     122 BPM
+Capo      none
+Verse     Am → C → Fmaj7
+Chorus    Dm → Dm6 → Am → G → Fmaj7
+Interlude Am → C → Fmaj7 → Fmaj7 (×2)
+Outro     Am → C → Fmaj7; extended strumming
+Strum     ↓ · x ↑ · ↑ ↓ ↑; outro ↓ · x ↑ · ↑ x ↑ · ↑ x ↑ · ↑ ↓ ↑
+────────────────────────────────────────

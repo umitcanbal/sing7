@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	files, err := filepath.Glob("akordy/*.txt")
+	files, err := filepath.Glob("songs/*.txt")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "glob: %v\n", err)
 		os.Exit(1)

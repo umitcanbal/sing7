@@ -1,0 +1,161 @@
+Damned If I Do Ya (Damned If I Don't) — All Time Low
+
+B:      x 2 4 4 4 2
+G:      3 2 0 0 0 3
+D:      x x 0 2 3 2
+A:      x 0 2 2 2 0
+E:      0 2 2 1 0 0
+C#m:    x 4 6 6 5 4
+F#/A#:  x 6 8 8 7 6
+Am:     x 0 2 2 1 0
+
+[Intro]
+guitar 1 (rhythm, ×2)
+e |-0-00-xxxxxx-0-00---xxxx-|-0-00-xxxxxx-0-00---xxxx-|
+B |-0-22-xxxxxx-0-22---xxxx-|-0-22-xxxxxx-0-22---xxxx-|
+G |-1-22-446644-1-22---6644-|-1-22-446644-1-22---6644-|
+D |-2-22-xxxxxx-2-22---xxxx-|-2-22-xxxxxx-2-22---xxxx-|
+A |-2-00-224422-2-00---4422-|-2-00-224422-2-00---4422-|
+E |-0-00-xxxxxx-0-00---xxxx-|-0-00-xxxxxx-0-00---xxxx-|
+
+guitar 2 (lead, ×2)
+e |-12--0--12--0--12--0--12--14-|-12--0--12--0--12--0--12--14-|
+B |---12-12--12-12--12-12--12--12-|---12-12--12-12--12-12--12--12-|
+
+[Verse 1]
+A      E        B      C#m
+I've fought it for a long time now
+A      E        B           F#/A#
+While drowning in a river of denial
+A      E        B      C#m
+I washed up, fixed up, picked up
+D               B
+All my broken things
+
+A      E        B       C#m
+'Cause you left me police tape, chalk line
+A      E        B       C#m
+Tequila shots in the dark scene of the crime
+A      E        B       C#m
+Suburban living with a feeling that I'm giving up
+D              B
+Everything for you
+
+[Chorus]
+E                   A
+Oh, oh, oh How was I supposed to know
+            C#m                     B
+That you were oh, oh, over me? I think that I should go
+      C#m                     A
+And something's telling me to leave but I won't
+            A
+'Cause I'm damned if I do ya, damned if I don't
+
+[Intro]
+guitar 1 (rhythm, ×2)
+e |-0-00-xxxxxx-0-00---xxxx-|-0-00-xxxxxx-0-00---xxxx-|
+B |-0-22-xxxxxx-0-22---xxxx-|-0-22-xxxxxx-0-22---xxxx-|
+G |-1-22-446644-1-22---6644-|-1-22-446644-1-22---6644-|
+D |-2-22-xxxxxx-2-22---xxxx-|-2-22-xxxxxx-2-22---xxxx-|
+A |-2-00-224422-2-00---4422-|-2-00-224422-2-00---4422-|
+E |-0-00-xxxxxx-0-00---xxxx-|-0-00-xxxxxx-0-00---xxxx-|
+
+guitar 2 (lead, ×2)
+e |-12--0--12--0--12--0--12--14-|-12--0--12--0--12--0--12--14-|
+B |---12-12--12-12--12-12--12--12-|---12-12--12-12--12-12--12--12-|
+
+[Verse 2]
+A      E         B              C#m
+It took a lot to take you home
+A      E             B       F#/A#
+One stupid call and I end up alone
+A      E             B       C#m
+You're made up, dressed up messed up
+D                   B
+plans I set in stone
+
+A           E       B       C#m
+But you made me do and I don't like
+A               E               B               C#m
+dancing in the alley with a streetrat night life
+A           E               B               C#m
+Can't keep living with a feeling that I'm giving up
+D               B
+Everything for you
+
+[Chorus]
+E                   A
+Oh, oh, oh How was I supposed to know
+            C#m                     B
+That you were oh, oh, over me? I think that I should go
+      C#m                     A
+And something's telling me to leave but I won't
+            A
+'Cause I'm damned if I do ya, damned if I don't
+
+[Bridge]
+            A                       B       C#m
+Make a fool of myself when you hang around
+                A                       E       B
+When you're gone I'm a match that's burning out
+                A                       E           F#/A#   A
+Could have been, should have done what I said I was going to do
+   Am
+But I never promised you
+Promised you, promised you
+
+[Chorus]
+E                   A
+Oh, oh, oh How was I supposed to know
+            C#m                     B
+That you were oh, oh, over me? I think that I should go
+      C#m                     A
+It never took a fool to see the things that I won't
+            A
+'Cause I'm damned if I do ya
+        B
+Damned if I do ya
+
+E                   A
+Oh, oh, oh How was I supposed to know
+            C#m                     B
+That you were oh, oh, over me? I think that I should go
+      C#m                     A
+And something's telling me to leave but I won't
+            A
+'Cause I'm damned if I do ya, damned if I d-d-d-
+            A
+Damned if I do ya
+Damned if I don't
+
+[Intro]
+guitar 1 (rhythm) — ending chord
+e |-0-00-xxxxxx-0-00---xxxx00-|
+B |-0-22-xxxxxx-0-22---xxxx00-|
+G |-1-22-446644-1-22---664411-|
+D |-2-22-xxxxxx-2-22---xxxx22-|
+A |-2-00-224422-2-00---442222-|
+E |-0-00-xxxxxx-0-00---xxxx00-|
+
+guitar 2 (lead)
+e |-12--0--12--0--12--0--12--14--12--0--12--0--12--0--12--14---00-|
+B |---12-12--12-12--12-12--12--12--12-12--12-12--12-12--12--12--00-|
+G |-----------------------------------------------------------11-|
+D |-----------------------------------------------------------22-|
+A |-----------------------------------------------------------22-|
+E |-----------------------------------------------------------00-|
+
+────────────────────────────────────────
+Source    pdf/damned if i do ya damned if i dont chords.pdf
+Artist    All Time Low (2009)
+Key       B
+Time      4/4
+Capo      none
+Tuning    E A D G B E
+Chords    A, E, B, C#m, F#/A#, D, Am
+Intro     rhythm + lead tab (B G D A power chords)
+Verse     A → E → B → C#m → F#/A#; D → B
+Chorus    E → A → C#m → B
+Bridge    A → B → C#m → E → F#/A# → Am
+Note      E in verses: first half high E, second half low E; x = dead note
+────────────────────────────────────────

@@ -6,7 +6,7 @@ A music app that shows song lyrics with chords above the words, auto-scrolls at 
 
 - **Backend:** Go — reads `.txt` song files, parses them, holds them in memory, serves read-only REST.
 - **Frontend:** Next.js — consumes the API.
-- **Song source:** the `akordy/` folder (one `.txt` file per song) is the source of truth. The app never writes songs.
+- **Song source:** the `songs/` folder (one `.txt` file per song) is the source of truth. The app never writes songs.
 - **Storage:** in-memory (parsed on startup). No database.
 - **Runtime:** Docker.
 
@@ -14,7 +14,7 @@ A music app that shows song lyrics with chords above the words, auto-scrolls at 
 
 - **`sing7-build-steps.html`** — the ordered, actionable build plan. **Execute steps in order.** Each step has Goal / Implementation tasks / Done when / Result. Phase 1 = working app; Phase 2 = enhancements (chord diagrams, transpose).
 - **`sing7-mvp-plan.html`** — the full technical plan: data model (§3), parser design (§4), chord shapes (§5), API contract (§7), architecture (§8), open assumptions (§11).
-- **`akordy/`** — the 28 real song files. Use them as parser test fixtures. `akordy/.cursor/skills/strumming/SKILL.md` is the authoritative `.txt` song-file format grammar and rules.
+- **`songs/`** — the 28 real song files. Use them as parser test fixtures. `akordy/.cursor/skills/strumming/SKILL.md` is the authoritative `.txt` song-file format grammar and rules.
 
 ## Key decisions (already settled)
 
@@ -29,7 +29,7 @@ Whenever an implementation choice affects what the user sees or hears — chord 
 
 - Backend layout: `cmd/server`, `internal/song`, `internal/parser`, `internal/store`, `internal/httpapi`.
 - **Naming — package = layer, type = entity, one file per entity.** The backend is grouped by *layer* (`store`, `httpapi`, `parser`), not by domain. A package is the layer/role and stays a namespace; the *type* names the entity within it. So the song store is `store.SongStore` (loaded by `store.LoadSongs`) — not `store.Store` — and the songs API is `httpapi.SongAPI`. This keeps generic layer words (`store`) from being "used up" by one entity: a future entity slots in beside it as a **new file in the same package** (`internal/store/playlist.go` → `store.PlaylistStore`, `store.LoadPlaylists`), never by bloating an existing file. Each entity lives in its own file named after it (`internal/store/song.go`). Only revisit a full domain-package split (`internal/playlist/…`) if one layer package genuinely grows heavy — decide then, with real weight, not speculatively (note: a split that moves the store into `song` would force the standalone parser to merge in too, due to a `parser`↔`song` import cycle).
-- Build the parser as a standalone, tested package first — it's the highest-risk part. Prove it against all 28 files in `akordy/` before wiring it into the server.
+- Build the parser as a standalone, tested package first — it's the highest-risk part. Prove it against all 28 files in `songs/` before wiring it into the server.
 - Muted guitar string = `-1` in `frets`.
 - **Documenting corpus quirks — one discipline, one lookup.** Every quirk the corpus reveals is recorded by **how the parser treats it today**. Never leave a known quirk undocumented, and always state plainly whether the parser handles it. Do it in the same change that introduces/handles the quirk — proactively, without waiting for the owner to notice.
 
@@ -42,7 +42,7 @@ Whenever an implementation choice affects what the user sees or hears — chord 
   | Handled only by quirk-specific tolerance code                                                  | the file (eventually) | §2 (or §6.3)                                                                                   | `NORMALIZE-REMOVABLE:` comment on the code, with a §6.3 pointer |
   | **Not** handled — parses but renders stray/garbage output or loses info (file is non-standard) | the file              | the §6.3 _Known inconsistencies_ list, "Parser today" column stating the exact wrong behaviour | — (no code exists)                                              |
 
-  Key split: **§6.3 has two mirrored lists** — _Known inconsistencies (fix in the files)_ for non-standard files, and _Known parser limitations (fix in the parser)_ for valid files the parser doesn't yet fully represent. Never put a parser gap in the files list or vice-versa. §2 is the format's living spec (and the normalizer's input); `grep -rn NORMALIZE-REMOVABLE` lists every toleration deletable once `akordy/` is normalized.
+  Key split: **§6.3 has two mirrored lists** — _Known inconsistencies (fix in the files)_ for non-standard files, and _Known parser limitations (fix in the parser)_ for valid files the parser doesn't yet fully represent. Never put a parser gap in the files list or vice-versa. §2 is the format's living spec (and the normalizer's input); `grep -rn NORMALIZE-REMOVABLE` lists every toleration deletable once `songs/` is normalized.
 
 - **Finish the ripples of a change, in the same change.** When you change one thing — a struct field, a function's contract, a format rule — find every other place that must stay consistent with it (its tests, its documentation, and any parallel representation of the same thing: worked examples, JSON samples, DTOs, the plan docs) and update them together. Then state which places you updated and which you deliberately left, and why. A change is not done while a mirror of it is stale. Prefer one source of truth with few mirrors; when a mirror is unavoidable, updating it is part of the change, not a follow-up.
 - Don't hide a meaningful call inside an `if` init statement. When the call itself matters (not just the boolean it produces), assign it to a variable on its own line, then test the variable. Prefer:
