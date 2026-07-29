@@ -107,35 +107,40 @@ func (s *SongStore) buildIndex() {
 	})
 }
 
-// All returns every song, sorted artist-then-title. The returned slice is a
-// fresh copy, so a caller may reorder or truncate it without disturbing the
-// store's own index.
-func (s *SongStore) All() []song.Song {
-	result := make([]song.Song, len(s.ordered))
-	for i, entry := range s.ordered {
-		result[i] = entry.song
+// All returns every song, sorted artist-then-title. The returned slice holds
+// pointers directly into the store's own index — callers must not mutate the
+// songs through them.
+func (s *SongStore) All() []*song.Song {
+	result := make([]*song.Song, len(s.ordered))
+	for i := range s.ordered {
+		result[i] = &s.ordered[i].song
 	}
 	return result
 }
 
 // Get returns the full song for a slug. ok is false when no song has that slug.
-func (s *SongStore) Get(slug string) (sng song.Song, ok bool) {
-	sng, ok = s.bySlug[slug]
-	return sng, ok
+func (s *SongStore) Get(slug string) (*song.Song, bool) {
+	sng, ok := s.bySlug[slug]
+	if !ok {
+		return nil, false
+	}
+	return &sng, true
 }
 
 // Search returns the songs whose title or artist contains query, matched
 // case-insensitively as a substring, in the same artist-then-title order as
-// All. An empty or whitespace-only query returns the whole library.
-func (s *SongStore) Search(query string) []song.Song {
+// All. An empty or whitespace-only query returns the whole library. The
+// returned pointers point directly into the store — callers must not mutate
+// the songs through them.
+func (s *SongStore) Search(query string) []*song.Song {
 	needle := strings.TrimSpace(strings.ToLower(query))
 	if needle == "" {
 		return s.All()
 	}
-	var result []song.Song
-	for _, entry := range s.ordered {
+	var result []*song.Song
+	for i, entry := range s.ordered {
 		if strings.Contains(entry.haystack, needle) {
-			result = append(result, entry.song)
+			result = append(result, &s.ordered[i].song)
 		}
 	}
 	return result

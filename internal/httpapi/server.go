@@ -37,7 +37,7 @@ func (s *SongService) GetSong(_ context.Context, slug string) (*Song, error) {
 	return toSong(sng), nil
 }
 
-func toSongListItem(s song.Song) *SongListItem {
+func toSongListItem(s *song.Song) *SongListItem {
 	item := &SongListItem{
 		Slug:   s.Slug,
 		Title:  s.Title,
@@ -49,7 +49,7 @@ func toSongListItem(s song.Song) *SongListItem {
 	return item
 }
 
-func toSong(s song.Song) *Song {
+func toSong(s *song.Song) *Song {
 	strum := make([]*Strum, len(s.Strum))
 	for i, st := range s.Strum {
 		strum[i] = toStrum(st)

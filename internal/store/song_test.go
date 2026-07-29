@@ -179,7 +179,7 @@ func TestLoadMissingDirIsEmptyNotError(t *testing.T) {
 
 // --- helpers ---
 
-func indexOfSlug(songs []song.Song, slug string) int {
+func indexOfSlug(songs []*song.Song, slug string) int {
 	for i, sng := range songs {
 		if sng.Slug == slug {
 			return i
