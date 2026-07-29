@@ -24,9 +24,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handleHealth)
 
-	// SongAPI serves the loaded library over /api/songs and /api/songs/{slug}.
-	songAPI := httpapi.NewSongAPI(library)
-	songAPI.Register(mux)
+	// SongService serves the loaded library over webrpc at /rpc/SongService/*.
+	songService := httpapi.NewSongService(library)
+	mux.Handle("/rpc/", httpapi.NewSongServiceServer(songService))
 
 	address := ":8080"
 	log.Printf("SING7 server listening on %s", address)

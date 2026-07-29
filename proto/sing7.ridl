@@ -1,0 +1,69 @@
+webrpc = v1
+
+name = sing7
+version = v1.0.0
+basepath = /rpc
+
+service SongService
+  # ListSongs returns every song sorted artist-then-title.
+  # Pass q to filter by title or artist (case-insensitive substring).
+  - ListSongs(q?: string) => (songs: []SongListItem)
+
+  # GetSong returns the full song for a slug.
+  - GetSong(slug: string) => (song: Song)
+
+# SongListItem is one row in the browse/search list.
+struct SongListItem
+  - slug: string
+  - title: string
+  - artist: string
+  - key?: string
+
+# Song is the full song payload.
+struct Song
+  - slug: string
+  - title: string
+  - artist: string
+  - meta: Meta
+  - strum: []Strum
+  - chordShapes: map<string,ChordShape>
+  - sections: []Section
+
+# Meta holds footer metadata. Every field is optional.
+struct Meta
+  - key?: string
+  - capo?: int32
+  - time?: string
+  - tempo?: string
+  - year?: int32
+  - notes?: []string
+
+# Strum is one strumming pattern.
+struct Strum
+  - label?: string
+  - strokes: string
+  - beats: string
+
+# ChordShape is one chord voicing. Frets run low-to-high; -1 means muted.
+struct ChordShape
+  - frets: []int32
+  - source: string
+
+# Section is a run of lines under one section tag. label is absent for the
+# implicit untagged section.
+struct Section
+  - label?: string
+  - lines: []Line
+
+# Line is one rendered line.
+struct Line
+  - chordsOnly: bool
+  - parts: []Part
+  - annotation?: string
+
+# Part is a chord attached to the text that follows it.
+struct Part
+  - chord?: string
+  - text?: string
+
+error 1000 SongNotFound "song not found" HTTP 404
