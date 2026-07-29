@@ -9,32 +9,36 @@ import (
 	"sing7/internal/store"
 )
 
+var config = struct {
+	SongsDir string
+	Address  string
+}{
+	SongsDir: "songs",
+	Address:  ":8080",
+}
+
 func main() {
-
-	songsDir := "songs"
-
 	// Load parses the whole folder into memory and logs its own load summary;
 	// it only errors when the directory itself can't be scanned.
-	library, _, err := store.LoadSongs(songsDir)
+	library, _, err := store.LoadSongs(config.SongsDir)
 	if err != nil {
 		log.Fatalf("loading songs: %v", err)
 	}
-	log.Printf("SING7 library ready: %d songs from %s", len(library.All()), songsDir)
+	log.Printf("SING7 library ready: %d songs from %s", len(library.All()), config.SongsDir)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", handleHealth)
+	log.Printf("SING7 server listening on %s", config.Address)
 
-	// SongService serves the loaded library over webrpc at /rpc/SongService/*.
-	songService := httpapi.NewSongService(library)
-	mux.Handle("/rpc/", httpapi.NewSongServiceServer(songService))
-
-	address := ":8080"
-	log.Printf("SING7 server listening on %s", address)
-
-	err = http.ListenAndServe(address, mux) // Runs forever
+	err = http.ListenAndServe(config.Address, newRouter(library))
 	if err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+func newRouter(library *store.SongStore) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", handleHealth)
+	mux.Handle("/rpc/", httpapi.NewSongServiceServer(httpapi.NewSongService(library)))
+	return mux
 }
 
 // handleHealth reports that the server is up.
