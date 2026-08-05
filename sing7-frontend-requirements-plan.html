@@ -1,0 +1,847 @@
+<meta charset="utf-8">
+<title>SING7 — Frontend Requirements</title>
+<style>
+  :root {
+    --page: #f4f4f2;
+    --paper: #ffffff;
+    --text: #202124;
+    --muted: #61656b;
+    --line: #d9dadd;
+    --soft: #f7f7f6;
+    --code: #f1f2f3;
+    --accent: #2f5f8f;
+    --good: #2f7d43;
+    --warn: #9a6b00;
+    --you: #8a4b9c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background: var(--page);
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.55;
+  }
+  html { scroll-behavior: smooth; }
+  /* The sidebar hugs the left edge; the paper stays a readable width and centres
+     itself in whatever space is left, so no gap opens up beside the sidebar. */
+  .layout {
+    width: calc(100% - 32px); margin: 24px auto 80px;
+    display: flex; gap: 24px; align-items: flex-start;
+  }
+  main {
+    flex: 1; min-width: 0; max-width: 1040px;
+    padding: 32px 40px 56px; background: var(--paper); border: 1px solid var(--line);
+  }
+
+  /* ---- sidebar ---- */
+  .toc {
+    position: sticky; top: 24px; align-self: flex-start;
+    width: 215px; flex: none;
+    max-height: calc(100vh - 48px); overflow-y: auto;
+    padding: 14px 12px; background: var(--paper); border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .toc h3 {
+    margin: 0 0 4px; font-size: 11px; font-weight: bold;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  }
+  .toc .count { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+  .toc a {
+    display: block; position: relative;
+    padding: 5px 6px 5px 20px; margin-bottom: 1px;
+    color: var(--text); text-decoration: none; line-height: 1.35;
+  }
+  .toc a:hover { background: var(--soft); }
+  .toc a::before { content: "●"; position: absolute; left: 5px; }
+  .toc a.open::before { color: #c8cacd; }
+  .toc a.proposed::before { color: var(--warn); }
+  .toc a.resolved::before { color: var(--good); }
+  .toc a.resolved { color: var(--muted); }
+  @media (max-width: 1080px) { .toc { display: none; } }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  h2 { margin: 38px 0 10px; padding-top: 8px; border-top: 2px solid var(--text); font-size: 22px; }
+  h3 { margin: 18px 0 6px; font-size: 16px; }
+  p { margin: 8px 0 14px; }
+  ul, ol { margin: 8px 0 14px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .muted { color: var(--muted); }
+  code {
+    font-family: Consolas, Monaco, monospace; font-size: .94em;
+    background: var(--code); padding: 0 3px; border-radius: 2px;
+  }
+  pre {
+    margin: 0 0 14px; padding: 12px; overflow: auto;
+    background: var(--code); border: 1px solid #d0d2d5;
+    font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--soft); }
+
+  /* ---- toolbar ---- */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 24px; padding: 10px 14px;
+    background: #eef1f5; border: 1px solid #c7d4e2;
+  }
+  .bar .status { margin-left: auto; font-size: 13px; color: var(--muted); }
+  button {
+    font-family: inherit; font-size: 13px; font-weight: bold;
+    padding: 7px 13px; cursor: pointer;
+    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 3px;
+  }
+  button.ghost { background: #fff; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .howto { margin: 0 0 26px; padding: 12px 14px; background: #fff9e8; border: 1px solid #ead9a8; }
+  .howto ol { margin: 6px 0 0; }
+
+  /* ---- plan section ---- */
+  .section { margin: 0 0 8px; scroll-margin-top: 16px; }
+  .plan { padding: 12px 14px; background: var(--soft); border-left: 3px solid var(--accent); }
+  .plan .lbl {
+    display: block; margin-bottom: 4px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--accent);
+  }
+  .plan > div > *:first-child { margin-top: 0; }
+  .plan > div > *:last-child { margin-bottom: 0; }
+
+  /* ---- thread ---- */
+  .thread { margin: 12px 0 0; padding: 0 0 0 14px; border-left: 3px solid var(--line); }
+  .thread.resolved { border-left-color: var(--good); }
+  .thread.proposed { border-left-color: var(--warn); }
+  .entry { margin: 0 0 10px; }
+  .entry .who {
+    display: inline-block; margin-bottom: 2px;
+    font-size: 11px; font-weight: bold; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .entry.umit .who { color: var(--you); }
+  .entry.claude .who { color: var(--accent); }
+  .entry .body { margin: 0; padding: 8px 11px; border: 1px solid var(--line); background: #fff; white-space: pre-wrap; }
+  .entry.umit .body { border-left: 3px solid var(--you); }
+  .entry.claude .body { border-left: 3px solid var(--accent); }
+
+  details.history { margin: 0 0 10px; }
+  details.history summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details.history[open] summary { margin-bottom: 10px; }
+  details.history .entry .body { color: var(--muted); text-decoration: line-through; background: #fbfbfa; }
+  details.history .entry .who { text-decoration: line-through; opacity: .7; }
+
+  /* A resolved section has ONE block: the plan text itself, turned green and
+     relabelled. There is no separate summary — a summary would drift. */
+  .plan.agreed { background: #eef7ee; border-left-color: var(--good); }
+  .plan.agreed .lbl { color: var(--good); }
+  .plan .reopen {
+    margin-top: 12px; padding: 3px 10px; font-size: 12px; font-weight: normal;
+    background: #fff; color: var(--muted); border-color: var(--line);
+  }
+  .plan .reopen:hover { color: var(--text); }
+
+  .proposal { margin: 0 0 10px; padding: 10px 12px; background: #fff9e8; border: 1px solid #ead9a8; border-left: 3px solid var(--warn); }
+  .proposal .lbl {
+    display: block; margin-bottom: 3px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--warn);
+  }
+  .proposal .ask { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .proposal .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .proposal button.agree { background: var(--good); border-color: var(--good); }
+  .proposal details { margin-top: 8px; }
+  .proposal details summary { cursor: pointer; font-size: 13px; color: var(--warn); }
+  .proposal details > div { margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--line); }
+
+  .compose { margin: 4px 0 0; }
+  .compose textarea {
+    width: 100%; min-height: 68px; padding: 8px 10px;
+    font-family: inherit; font-size: 14px; line-height: 1.5;
+    border: 1px solid var(--line); background: #fff; resize: vertical;
+  }
+  .compose textarea:focus { outline: 2px solid var(--you); outline-offset: -1px; }
+  .compose .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .compose .hint { font-size: 12px; color: var(--muted); }
+  .unsaved { color: var(--warn); font-weight: bold; }
+</style>
+
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+  <h1>SING7 — Frontend Requirements</h1>
+  <p class="muted">What the app has to do. This is for both the React app and the SvelteKit app, so there is no framework talk here. Every section is a decision about what a player sees or does. When all of them are agreed, we write the architecture plan.</p>
+
+  <div class="bar">
+    <button id="connect" class="ghost">Connect this file</button>
+    <button id="save" disabled>Save my comments</button>
+    <span class="status" id="status">not connected</span>
+  </div>
+
+  <div class="howto">
+    <strong>How to use this page</strong>
+    <ol>
+      <li>Click <strong>Connect this file</strong> and pick <code id="file-name">this file</code> in the box that opens. You only do this once per browser session.</li>
+      <li>Write a comment under any section, then click <strong>Save my comments</strong>. Your text is written into this HTML file.</li>
+      <li>Tell Claude you saved. It reads the file, writes an answer into it, and tells you to reload.</li>
+      <li>When we agree, Claude puts the final text in a yellow box. Only you can close a section: press <strong>Agree</strong>, then <strong>Save my comments</strong>. If you do not agree, just write a comment instead.</li>
+    </ol>
+  </div>
+
+  <div id="sections"></div>
+
+</main>
+</div>
+
+<script id="thread-data" type="application/json">
+{
+  "general": [
+    {
+      "author": "umit",
+      "text": "I have two questions or requirements to add or to ask you, so number one is that the chord name should have a different color because of the visibility than the lyrics underlying it. Do you agree with that? And if so, should we edit in some of our sections, which I don't know where it would be the best place? And the requirement number two is that where does the auto scrolling start? Because the page content can differ. Maybe some page will have strums, some will not. So the chords and the lyrics, so the main part that the player needs, might start at the different section of the page. So I was thinking that if we do, if we click on the play button initially, or at the bottom of the page, don't you think we need to scroll the page to fit? Where the lyrics and chords start, does it make sense to you? And do you think it's achievable?"
+    },
+    {
+      "author": "claude",
+      "text": "Both are real gaps, and yes to both. Each one became its own section, because neither fits inside a section that is already agreed.\n\n1) Chord colour -> new section 12, \"How the song page looks\". You are right, and the plan never said one word about colour or size anywhere, which was a hole. Chords go deep blue and bold, lyrics stay near-black. Your eye is doing two jobs at once — reading words and spotting the next chord before it arrives — so they must not look the same. I also wrote down the quiet stuff (part names, (×2) notes, the info line) and the text size, since they are the same question.\n\nOne rule I added on purpose: colour is never the ONLY signal. Chords already sit on their own row above the words, so the page still reads fine for someone who cannot tell the colours apart, and it still works printed in black.\n\n2) Where scrolling starts -> new section 13. Yes, achievable, and it is a few lines of code. Your reason is exactly right: one song has a strum grid above the words and another does not, so there is no fixed height that works. The rule is \"the top\" always means the first line of the song, not the top of the page. Press play on a fresh song and it jumps there first, then scrolls.\n\nBut it must not jump every time. If you stopped in the middle to work on a chord, pressing play again has to carry on from where you are, not throw you back to the start. So it only jumps when you have not started yet, or when you already hit the bottom. The table in section 13 spells out all three cases.\n\nThat second one also fixes a loose end in §8: it said play-at-the-bottom goes \"back to the top\", which was vague. It means the first line of the song.\n\nWhy new sections instead of editing §6 and §8: those are agreed, and I am not allowed to touch agreed text. Splitting them out means you can read and agree to each on its own. When I write the final .md at the end, section 13 gets folded into the auto-scroll part and section 12 becomes its own chapter — the numbers here are for reviewing, not for the finished document."
+    }
+  ],
+  "sections": [
+    {
+      "id": "device",
+      "title": "1. Who uses it, and on what",
+      "plan": "<p><strong>The app is built for a desktop or laptop browser.\u003c/strong> A wide window, a mouse, a keyboard. Phones and tablets are not part of the first version.\u003c/p><p><strong>What this makes easier:\u003c/strong>\u003c/p><ul><li>No touch code, no swipes, no small screens to fight with.\u003c/li><li>A mouse is exact, so a fine speed control is fine. That is why §8 uses a percentage instead of a few big steps.\u003c/li><li>Keyboard shortcuts work. Space to start and stop the scroll is the obvious one.\u003c/li><li>The window is wide, so long lyric lines almost never wrap.\u003c/li>\u003c/ul><p><strong>And when a line is too long anyway, it wraps.\u003c/strong> Nothing shrinks. A line is a row of small blocks — chord on top, its own text under it — so when the row runs out of width, the next block drops to a new line, like words in a paragraph. Each chord stays glued to its own text, so wrapping never breaks the lining-up. We never shrink the font to make a line fit: then every song would be a different size, and small text is the wrong answer when the screen is an arm away.\u003c/p><p><strong>What it costs:\u003c/strong> a phone on a music stand is the normal way to use an app like this. So phones are not cancelled, just later (Phase 2). Nothing here makes that harder, as long as §6 stays a flowing layout and not a fixed-width one.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "lets do desktop first and forget about mobile for now"
+        },
+        {
+          "author": "claude",
+          "text": "Agreed, and it is the right call to get something running.\n\nOne thing I want to say out loud: a phone on a music stand is how this app really gets used, with a guitar in your hands. So I would call phones \"Phase 2\", not \"forget\". Keeping the layout flowing (§6) means adding them later costs almost nothing.\n\nTwo side effects I added to the text: a mouse is exact, so the 5-step speed control in §8 becomes the percentage slider you asked for. And keyboard shortcuts are now possible, so space to start and stop is worth having."
+        },
+        {
+          "author": "umit",
+          "text": "So what happens if the long lyric lines are actually really long, that they don't fit the laptop screen? What would happen in the UI? Will you just continue to the next line or will you lower the font size? What's your plan?\nAnd what do you mean by how it works, so buttons can stay quiet until you move to mouse near them? What does it mean? Which buttons? What's the value of this sentence even? I don't get it."
+        },
+        {
+          "author": "claude",
+          "text": "Two answers.\n\n1) Long lines. They wrap to the next line, and nothing shrinks. This is what §6 means by \"flowing\": a line is a row of small blocks, each block being a chord with its own text under it. When the row runs out of width, the next block drops to a new line, exactly like words in a paragraph. Each chord stays glued to its own text, so wrapping never breaks the lining-up:\n\n  Am              C            Fmaj7\n  Bones, sinking like stones,  all that\n\n  we fought for            <- ran out of width, so it wrapped here\n\nI would not shrink the font. If we did, every song would be a different size depending on its longest line, and small text is the wrong answer when the screen is an arm away.\n\n2) You are right, that bullet was empty. I wrote \"buttons can stay quiet until you move the mouse near them\" meaning we could fade controls out until you hover over them. But this app has one control bar with a play button and a speed slider, and you want both of those visible while you play. So there is nothing to hide, and the sentence said nothing useful. I cut it.\n\nThe yellow box has the new text: the empty bullet is gone, and there is a paragraph about what happens to long lines."
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "title": "2. What is in the first version, and what is not",
+      "plan": "<p>What we build now, and what waits.\u003c/p><table><thead><tr><th>In the first version\u003c/th><th>Why\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>Browse and search the song list\u003c/td><td>You cannot play a song you cannot find.\u003c/td>\u003c/tr><tr><td>Song page: chords above lyrics\u003c/td><td>This is the whole point of the app.\u003c/td>\u003c/tr><tr><td>Auto-scroll with a speed control\u003c/td><td>This is the reason it beats a paper sheet.\u003c/td>\u003c/tr><tr><td>Strum grid, when the song has one\u003c/td><td>9 of the 28 songs have one, and it is free to show.\u003c/td>\u003c/tr><tr><td>Print\u003c/td><td>DROPPED — moved to Phase 2, see §10.\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p><strong>Later (Phase 2):\u003c/strong> chord diagrams (click a chord, see where the fingers go), transpose, print (§10), and phone support (§1). None of these stop you playing a song.\u003c/p><p><strong>Never:\u003c/strong> accounts, editing songs inside the app, offline mode, a phone app.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "yes we can drop it to Phase 2"
+        },
+        {
+          "author": "claude",
+          "text": "Good. Print was the only one with a real cost — a stylesheet plus testing it by hand through a print box — for something you would probably never use. Everything else stays.\n\nI still answered your \"how does print even work\" question down in §10, because it is worth knowing before Phase 2 comes."
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "title": "3. The screens and their web addresses",
+      "plan": "<p>Two screens is enough:\u003c/p><pre>/                     the song list, with a search box\n/songs/&lt;slug&gt;         one song — the page you play from\n/songs/&lt;unknown&gt;      a \"not found\" screen with a link back\u003c/pre><p>The slug comes from the backend and looks like <code>coldplay-dont-panic\u003c/code>. So the address stays readable and never changes.\u003c/p><p><strong>The search filters the list itself.\u003c/strong> No dropdown. You type, and the list shrinks: 28 rows become 1. You click a row and go to that song.\u003c/p><pre>┌──────────────────────────────────────┐\n│ SING7            [ panic          ]  │  you type here\n│                                      │\n│  Coldplay                       F    │  the list itself\n│  Don't Panic                         │  shrank: 28 rows\n│                                      │  became 1\n└──────────────────────────────────────┘\n address:  sing7.com/?q=panic\u003c/pre><p><strong>The search text lives in the address, as <code>?q=\u003c/code>.\u003c/strong> The address is the only place it is kept — the app reads it and filters, never the other way round. That one rule gives us three things for free: pressing Back after opening a song brings the filtered list back, reloading the page keeps your search, and you can send someone a link to a filtered list.\u003c/p><p><strong>How the address is kept up to date while you type:\u003c/strong> with <code>history.replaceState()\u003c/code>, which overwrites the address of the page you are already on. No request, no reload, no navigation. It must be <code>replaceState\u003c/code> and not <code>pushState\u003c/code>: <code>pushState\u003c/code> would add one history entry per letter, so Back would walk you back through <code>pani\u003c/code>, <code>pan\u003c/code>, <code>pa\u003c/code>. With <code>replaceState\u003c/code> the history does not grow at all while you type.\u003c/p><p>We do not remember where the list was scrolled to. With 28 songs the list is short, and after a search it is shorter still.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "I dont understand how the query param will live in the URL if we dont have a dedicated page for searched filtered results? Im not sure I understand correctly, because what I understand is (please correct me if Im wrong) we will have a main page where songs are listed, and where there is a search bar, once we start typing in the search bar, there will be a dropdown that shows the filtered values (a.k.a matching songs with the current search text), at that moment there cant be any state of the URL, am I missing something? and if we click one of the options in the dropdown, then we go to /songs/<slug> page, and when we go back, then search bar is empty. Please clarify what you meant, Im a bit lost here."
+        },
+        {
+          "author": "claude",
+          "text": "You are not missing anything. We were each picturing a different screen, and I never said which one. There are two separate things mixed up here, so let me split them.\n\n1) A query param does NOT need its own page. The browser can change the address bar without going anywhere: it has history.replaceState(), and every router wraps it. You stay on the same page, nothing reloads, nothing blinks. The address just changes from / to /?q=panic while you type. I think this is the part that was missing. A query param is not a page. It is a slot for state that happens to show up in the address.\n\n2) But whether it is worth doing depends on which screen we pick. There are two:\n\n  Option 1 — dropdown (what you described). The page lists all 28 songs. You type, and a dropdown of matches opens on top. You click one and go to the song. Back gives you the list with an empty search box. Nothing in the address — and you are right that ?q= makes little sense here, because a dropdown is meant to disappear.\n\n  Option 2 — filter the list itself. No dropdown. You type, and the list shrinks: 28 rows become 3. You click a row and go to the song. Here the search is not a temporary thing, it is the state of the page. So putting it in the address means Back gives you the filtered list again instead of all 28.\n\nI suggest Option 2. With 28 songs the list is short, so filtering it directly is more direct than covering it with a floating panel. A dropdown is also fiddly to build well (arrow keys, focus, clicking outside), and we gain nothing. And the list is the whole content of the page, so hiding it behind a copy of itself is a bit odd.\n\nIf you want Option 1 instead, I would drop ?q= completely — nobody wants that state back. So: dropdown, or filter the list?"
+        },
+        {
+          "author": "umit",
+          "text": "Well, is it really possible that the URL is changing while the user is typing, but the page doesn't navigate anywhere, no client-side navigation or any sort of navigation. So I'm basically, it feels like basically I'm typing in the address bar, changing the URL. Does it work like that? Because it sounds very strange. I didn't know that this is possible. Am I missing something or did I understand correctly? So once again, I'm repeating, I will be changing an input field in the application and it will just in time simultaneously update the URL without causing any sort of navigation or whatsoever. And even if it works like that, which you will verify in your answer, let's say my query parameter ended up being panic, and then I select a song. So I went to the dedicated song page and then I click on the back button. So I ended up having the main page with the query parameter panic. Okay, and if I click on back button once again, now where do I go? Do I go again to the... Like do I still see the very same page with one letter less in the query parameter, which then would be \"pani\"?\nIt's difficult for me to imagine what you are suggesting even as an option. Do you think it makes sense to create some sort of a sketch, like an illustration? Probably we don't want a heavy image. It can be just like an excalidraw type sketch, if that's easier for you and the size is tinier and the processing is easier for both options so that I can imagine what you are saying better. You can also use a sketch. I'm not sure if it can be called sketch, but what you did in the section 5, to describe the UI, the look of the page, top to bottom in section 5, you can also create something like this. Just pick whatever is easier for you. I just want to understand and see the UI components, even if they are just a very simple drawing."
+        },
+        {
+          "author": "claude",
+          "text": "Yes, it really works like that, and your Back-button worry is the right question to ask. Sketches first.\n\nOPTION 1 — dropdown (what you described)\n\n  ┌──────────────────────────────────────┐\n  │ SING7            [ panic          ]  │  you type here\n  │                  ┌────────────────┐  │\n  │  ACDC            │ Don't Panic    │  │  a panel opens ON TOP\n  │  Highway to hell │ Coldplay       │  │  of the list\n  │                  └────────────────┘  │\n  │  Blink-182                           │  the full list is\n  │  I Miss You                          │  still under it\n  │                                      │\n  │  Coldplay                            │\n  │  Don't Panic                         │\n  └──────────────────────────────────────┘\n   address:  sing7.com/          <- never changes\n\nOPTION 2 — filter the list itself (what I suggest)\n\n  ┌──────────────────────────────────────┐\n  │ SING7            [ panic          ]  │  you type here\n  │                                      │\n  │  Coldplay                       F    │  the list itself\n  │  Don't Panic                         │  shrank: 28 rows\n  │                                      │  became 1\n  │                                      │\n  │                                      │\n  └──────────────────────────────────────┘\n   address:  sing7.com/?q=panic   <- changes as you type\n\nNow your two questions.\n\n1) \"It feels like I am typing in the address bar.\" Almost — but the page writes it, not you, and it is a normal thing browsers support. The call is history.replaceState(). It swaps the address of the page you are already on. No request, no reload, no navigation. Think of the address bar as a label the page is allowed to rewrite.\n\n2) The Back button. This is the important part, and it is exactly why I would use replaceState and not pushState. There are two different calls:\n\n  pushState    -> adds a new entry to the history. Typing 5 letters = 5 entries.\n                  Then Back really would walk you back: panic, pani, pan, pa, p.\n                  That is horrible, and it is what you were afraid of.\n\n  replaceState -> overwrites the current entry. Typing 5 letters = 0 new entries.\n                  The history does not grow at all.\n\nSo with replaceState, here is the full trace:\n\n  type p-a-n-i-c    address becomes /?q=panic       history: unchanged\n  click the song    address becomes /songs/...      history: +1 entry\n  press Back        address becomes /?q=panic       list, still filtered\n  press Back again  wherever you were before SING7  NOT \"pani\"\n\nOne Back gets you the filtered list. The second Back leaves the app. You never walk back letter by letter.\n\nSo: dropdown, or filter the list?"
+        },
+        {
+          "author": "umit",
+          "text": "Yeah, option 2 definitely sounds better, so we will filter the list itself. Yeah, I agree, no dropdown. I still don't understand the reply state, I think. I understand that we are typing panic. The history is unchanged, fair enough. And then I click the song, the URL changes and there is a client-side navigation. Then the history is naturally changed and we edit an entry. Okay. The part I don't understand is that once or when we press back, how come the address becomes with the query parameter panic? So it is still a filtered list. Will this be just like a local UI state so that we could get the filtered list back or are we reading it from somewhere else? I don't even understand the mechanics, how this works. So I was thinking as an option, not how to implement, but an option how to interpret what you meant is that once we click the song, we don't only do the client-side navigation, but we also add something to the history and that's why we could go back to the query parameter with panic. But I don't know, I think I need more explanation on that. My front-end knowledge is not enough to grasp the plan you have in mind, probably."
+        },
+        {
+          "author": "claude",
+          "text": "Option 2 it is. And your guess is basically right — you just need one more piece, and then the whole thing clicks.\n\nThe piece: THE BROWSER STORES THE ADDRESS OF EVERY HISTORY ENTRY. That is what a history entry is. It is not \"a page\", it is an address the browser remembers you were at.\n\nSo watch what each entry holds:\n\n  entry 1:  google.com               (wherever you came from)\n  entry 2:  sing7.com/?q=panic       <- you were here when you clicked\n  entry 3:  sing7.com/songs/coldplay-dont-panic\n\nWhen you clicked the song, the browser did not throw away entry 2. It froze it, with the address exactly as it was at that moment — including ?q=panic. Press Back and the browser puts that address back in the bar.\n\nNow the second piece, and this is the part you are asking about. The filtered list is NOT restored from anywhere. It is BUILT AGAIN from the address. The app has one rule:\n\n  whatever ?q= says, filter the list by that\n\nThat rule runs every time the page renders — on first load, after Back, after Forward, after a reload. So:\n\n  press Back\n    -> browser puts sing7.com/?q=panic in the address bar\n    -> app reads q = \"panic\"\n    -> app puts \"panic\" in the search box and shows 1 row\n\nThere is no saved UI state, no cache, nothing hidden. The address IS the state. The search box is a picture of the address, not the source of it.\n\nThe easiest way to feel it: type panic, then copy the address, close the tab, open a new tab, paste it. You get the filtered list. Same rule, no history involved at all.\n\nAnd one thing you said — \"we also add something to the history\" — is exactly right, just automatic: clicking a link is what adds entry 3. We never touch the history ourselves. We only rewrite the address of the entry we are already on, while you type, so it stays in step with the search box.\n\nThe yellow box has the final text for this section, with the sketch and the ?q= rule written down."
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "title": "4. The song list screen",
+      "plan": "<p>There are 28 songs. The whole list as JSON is a few kilobytes, smaller than one photo. So we do the simple thing: <strong>get the whole list once, then filter it in the browser as you type.\u003c/strong> No request per key press, no waiting, no spinner between letters.\u003c/p><p>We call <code>ListSongs\u003c/code> once when the app starts, with no <code>q\u003c/code> at all, and never call it again. The <code>q\u003c/code> field stays unused for now. It is there for the day the list gets too big to send in one go.\u003c/p><p><strong>What one row shows:\u003c/strong> title on top, artist under it, and the key (like <code>F\u003c/code>) on the right if the song has one. Sorted by artist, then title, which is what the backend already sends. One flat list, no artist headings.\u003c/p><p><strong>Matching is strict — the letters must match exactly.\u003c/strong> Typing <code>severni\u003c/code> does not find <em>Severní vítr\u003c/em>, because <code>i\u003c/code> and <code>í\u003c/code> are different letters. We accept that for the first version. The point is that the browser filter and the Go search behave exactly the same, so they can never drift apart. Ignoring accents is a nice-to-have, and when we add it we add it to both sides at once.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "so why do we ever hit ListSongs(q) endpoint? we will just hit once when the app loads to fetch all the songs by sending `q` with empty string value? \nI wouldnt want to filter accent-insensitive, lets keep the FE filtering functionality identical with BE filtering functionality, what do you think?\nI think flat list is more than okay."
+        },
+        {
+          "author": "claude",
+          "text": "Right on the first one, and flat list agreed. Taking them in order.\n\n1) ListSongs — yes, exactly that. One call when the app loads, with no q at all (the field is optional, so we send nothing, which means the same thing to the backend). We get all 28 back and never call it again. The q field is simply unused for now. It stays on the backend for the day the list gets too big to send at once.\n\n2) Accents — I like the idea behind your rule (one behaviour, not two that slowly drift apart), but I would apply it the other way round. Making the frontend match the backend today means typing \"severni\" finds nothing, and about a third of the songs are Czech: Severní vítr, Ani k stáru, Tisíc mil, Zejtra mám. Those songs become hard to reach on an English keyboard. That is a real loss for a rule that is really about tidiness.\n\nSo here is my counter-idea: keep your rule and change the backend instead. Drop accents in the Go search too, and then both sides are the same AND both work. The Go code already has the pieces — internal/song/song.go has a diacriticFolds map used for slugs, so reusing it in the store's search is a small, contained change. But it is a backend edit, so it is your call.\n\nThree choices, pick one: (a) both plain — same behaviour, Czech songs hard to find; (b) both drop accents — same behaviour and it works, costs one small backend change; (c) frontend drops accents, backend does not — works now, but the two disagree, which is the thing you did not want. I suggest (b), and I would not do (c)."
+        },
+        {
+          "author": "umit",
+          "text": "I think the option \"A\" is good. It's okay if we don't find the check song right now. This is an MEP. It's a small change. I just need to make it work. And the letter, the actual letter actually does not match. So I just don't bring this nice to have think, but the filtering will work perfectly and strictly. So, I'm okay with that."
+        },
+        {
+          "author": "claude",
+          "text": "Option A it is, and your reason is better than mine. Same behaviour on both sides is the rule that matters, and a Czech song being hard to find is a small, obvious problem you can live with. Dropping accents can be added later, to both sides at once.\n\nOne thing I wrote into the text so it is not lost: the reason strict matching is fine is that it is the same strictness everywhere. If we ever change it, we change the browser and the Go search in the same commit.\n\nThe yellow box has the final text: strict matching, flat list, one call at startup."
+        }
+      ]
+    },
+    {
+      "id": "song-layout",
+      "title": "5. The song screen — what is on it, and in what order",
+      "plan": "<p>Top to bottom:\u003c/p><pre>┌──────────────────────────────┐\n│ ‹ back      Don't Panic      │  title and artist\n│             Coldplay         │\n│ Key F · Capo 0 · 122 BPM     │  small info line\n├──────────────────────────────┤\n│ Intro / verse                │  strum grid, if the\n│ ↓ · x ↑ · ↑ ↓ ↑              │  song has one\n│ 1 &amp; 2 &amp; 3 &amp; 4 &amp;              │\n├──────────────────────────────┤\n│ [Verse 1]                    │  the song itself\n│  Am              C           │\n│ Bones, sinking like stones   │\n│         Fmaj7                │\n│ All that we fought for       │\n│                              │\n│ (extra space so the last     │\n│  line clears the bar)        │\n├──────────────────────────────┤\n│ ▶  speed ──────●──── 100%    │  control bar, floats\n└──────────────────────────────┘  over the song\u003c/pre><p><strong>The info line\u003c/strong> only shows what the song file actually has — key, capo, tempo, time, year — and quietly skips the rest. <code>meta.notes\u003c/code> (YouTube links, sources, Czech labels the parser did not map) goes into a closed \"Song info\" box at the very bottom. It is reference material, not something you read while playing.\u003c/p><p><strong>The control bar floats at the bottom of the window,\u003c/strong> over the song. The song also gets extra space at the bottom, the same height as the bar, so the last line of the song can always scroll clear above it. Floating and the extra space, both — that way the bar is always in reach and never covers anything you still need to read.\u003c/p><p><strong>The speed control is a slider with the number next to it.\u003c/strong> 100% is a normal reading pace, and it runs from about 10% to 300%. A number you can learn beats a position you have to guess.\u003c/p><p><strong>The strum grid sits near the top, above the song, and does not float.\u003c/strong> A strumming pattern is one bar long and repeats for the whole song, so a player checks it before starting and then never looks again. It does not need to stay on screen, and it does not need a button to hide it — that would just add a control for something already out of the way.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "sticky scroll bar idea sounds good but I think we can put it at the bottom of the page, So it's kind of overlaying the content of the page, but if we scroll the page all the way down, it wouldn't overlay any content, so we don't accidentally make any part of the page content unreadable, or maybe we can just solve it with simple padding up to you. And maybe we need like a little sensitive adjustment for the speed, so I guess your representation was symbolic, but five levels for speed can be too little. Maybe percentage is better there, so they can fine-tune the setting. I'm not sure about the location of the Strum Grid. I also don't play guitar so I don't really know how to approach it. But do you think that a guitar player needs to see it once or that information has to be in the vicinity of the user at all times? I don't know because I never try to play guitar, to be honest."
+        },
+        {
+          "author": "claude",
+          "text": "Three things, and the guitar one is a good question.\n\n1) Control bar at the bottom — agreed, better than my sticky top bar. It is near the mouse, out of the way of the lyrics, and it looks like every music player people already know. And you do not have to choose between floating and padding: do both. The bar floats over the song, and the song gets extra space at the bottom equal to the bar's height, so the last line can always scroll clear of it. That is the normal fix and it is one line of CSS.\n\n2) Speed — agreed, my five steps were wrong for a desktop. Since §1 says desktop, the mouse is exact, so a slider works. I would show it as a percentage where 100% is a normal reading pace, and let it go from about 10% to 300%. I would also print the number next to the slider, so it is a value you learn instead of a mystery position.\n\n3) Strum grid — you are not missing anything by not playing. The answer is really \"once\". A strumming pattern is one bar long, it repeats for the whole song, and your hands know it after a few repeats. It is something you check before you start, not something you read while playing. The lyrics are the opposite — you follow those the whole time. So the grid does not need to stay on screen.\n\nThat means the layout above is already right: put it near the top, above the song, plain and not floating. You look at it before you start, scroll past it, and never think about it again. No button needed — a button would just add a control to hide something that is already out of the way. The only cost is scrolling past it when you reopen a song, and auto-scroll starts from the top anyway.\n\nIf you are happy with these three, say so and I will write the final text for this section."
+        },
+        {
+          "author": "umit",
+          "text": "All good for this section. I agree with all of them."
+        },
+        {
+          "author": "claude",
+          "text": "Written up. The yellow box has the final text, with three changes from the old version: the control bar moved to the bottom and floats (plus extra space at the end of the song so nothing is ever covered), the speed control is a slider with a percentage, and the strum grid stays near the top with no button to hide it.\n\nI also drew the extra space into the picture, so the \"floats but never covers anything\" part is visible instead of just described."
+        }
+      ]
+    },
+    {
+      "id": "chord-render",
+      "title": "6. Chords above lyrics — the main drawing decision",
+      "plan": "<p>The backend gives each line as a list of parts. Each part is one chord plus the text that comes after it:\u003c/p><pre>{ chord: 'Am',    text: 'Bones, sinking l' }\n{ chord: 'C',     text: 'ike stones' }\u003c/pre><p><strong>We use Option B: flowing blocks, normal font.\u003c/strong> Each part becomes a small block with the chord on top and its own text underneath. The blocks flow and wrap like words in a paragraph.\u003c/p><pre>Am               C\nBones, sinking like stones\u003c/pre><p><strong>About spacing.\u003c/strong> The text pieces sit right next to each other, so a lyric reads as one normal sentence. A gap only opens when <em>one part's chord name is wider than that same part's text\u003c/em> — for example <code>{ chord: 'Fmaj7', text: 'a' }\u003c/code>, where the chord cannot fit above a single letter. Then that block stretches to fit the chord, and the gap lands at the <strong>end\u003c/strong> of the part, pushing the next part to the right. It never opens inside a word. Most parts hold several words, so this is rare.\u003c/p><p>This happens in every chords-above-lyrics layout, including the fixed-width one — it is the same reason the <code>.txt\u003c/code> files pad with spaces.\u003c/p><p><strong>What we did not pick — Option A: fixed-width font, exactly like the text file.\u003c/strong> Chord row above, lyric row below, spacing kept as-is. It is the easiest to build and it matches the file exactly. But a long line either runs off the side or wraps and destroys the lining-up. On a wide desktop you can live with that, but it means the layout could never move to a narrow screen, which kills the Phase 2 phone work.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "Option B sounds definitely better, but will there be such a huge space between the letters?"
+        },
+        {
+          "author": "claude",
+          "text": "No. That was my drawing being rough, and it was misleading. The text pieces sit right next to each other, so the lyric reads as one normal sentence:\n\n  Am               C\n  Bones, sinking like stones\n\nThere is exactly one case where a gap shows up: when the chord name is wider than the text under it. \"Fmaj7\" over the word \"a\" cannot fit in the width of one letter, so that block stretches to fit the chord and pushes a small gap into the line:\n\n  Fmaj7\n  a      thousand\n\nThat happens in any chords-above-lyrics layout, including the fixed-width one — it is why the .txt files pad with spaces too. It is a few pixels here and there, not the big gaps my drawing showed. I rewrote the plan text above so it describes the real spacing."
+        },
+        {
+          "author": "umit",
+          "text": "When you say that the chord name can be wider than the text under it, are you talking about this specific object that I'm sending you ```            {\n              \"Chord\": \"D\",\n              \"Text\": \"avy tvý brouky\"\n            },``` So, in this object, the chord field value will be longer than the text field value. Is this the only case where this gap shows up? You are not talking about an individual word, right? Where the chord name starts, an individual word meaning a word within the text string."
+        },
+        {
+          "author": "claude",
+          "text": "You understood it right, and no — not individual words. It is one part compared against itself: that part's chord name against that part's own text.\n\nYour example is the easy case, no gap at all:\n\n  { \"Chord\": \"D\", \"Text\": \"avy tvý brouky\" }\n\n  D\n  avy tvý brouky        <- \"D\" is tiny, the text is long, nothing stretches\n\nThe gap case needs a part whose text is very short:\n\n  { \"Chord\": \"Fmaj7\", \"Text\": \"a\" }\n\n  Fmaj7\n  a       thousand      <- the block had to grow to fit \"Fmaj7\",\n                           so a gap appears AFTER the \"a\"\n\nTwo things worth being clear about:\n\n- The gap lands at the END of the part and pushes the next part to the right. It never opens inside a word — \"brouky\" can never become \"bro uky\".\n- It is per part, not per line and not per word. Most parts hold several words, so their text is far wider than any chord name, and nothing moves.\n\nI put this into the yellow box, with your D example, because my old wording did not say which two things were being compared."
+        }
+      ]
+    },
+    {
+      "id": "chord-edge-cases",
+      "title": "7. The awkward lines",
+      "plan": "<p>Five cases show up in the real 28 songs and each needs a clear answer:\u003c/p><table><thead><tr><th>Case\u003c/th><th>What we do\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td><strong>A chord lands in the middle of a word.\u003c/strong> About 500 places in the song files do this. For example Don't Panic splits <code>Bones, sinking l\u003c/code> / <code>ike stones\u003c/code>.\u003c/td><td>Draw it in the middle of the word, exactly as the file says. The parser already refuses to guess, and the app should not quietly disagree with the file.\u003c/td>\u003c/tr><tr><td><strong>A lyric line with no chord line above it\u003c/strong> — the chord before it is still ringing.\u003c/td><td>No empty chord row above it. Just the lyric, close under the line before. Leaving blank space would almost double the height of a song.\u003c/td>\u003c/tr><tr><td><strong>A chords-only line\u003c/strong> (intro or interlude, no lyric under it).\u003c/td><td>Chords on their own row, spaced out, with no empty lyric line under them.\u003c/td>\u003c/tr><tr><td><strong>A note at the end of a line\u003c/strong> like <code>(×2)\u003c/code> or <code>(×4 takty)\u003c/code> — 12 of the 28 songs have these.\u003c/td><td>Show it at the end of that line, greyed out, exactly as written. Never drop it.\u003c/td>\u003c/tr><tr><td><strong>A part of the song with no name\u003c/strong> — 13 of the 28 songs have no section tags at all.\u003c/td><td>No heading, no placeholder, no \"Untitled\". The song just starts.\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p><strong>The app never moves a chord.\u003c/strong> The other option was to nudge each chord left to the start of the nearest word. That would tidy up about 500 lines, but the app would then quietly disagree with the file it is drawing. We chose faithful: a song that looks wrong is a bug in that <code>.txt\u003c/code> file, which someone fixes once for everybody, instead of a drawing quirk nobody can track down.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "I agree with all 5. I dont ever want to move the chord a pixel against what the parser says."
+        },
+        {
+          "author": "claude",
+          "text": "Agreed, and it is the stricter and better rule — it keeps one source of truth.\n\nWhat it means day to day: when a song looks wrong, the bug report is \"this .txt file has a chord in the wrong column\", not \"the app draws it wrong\". That is a much easier thing to find and fix for good."
+        }
+      ]
+    },
+    {
+      "id": "autoscroll",
+      "title": "8. Auto-scroll",
+      "plan": "<p>This is the feature that makes the app worth building. What it has to do:\u003c/p><ul><li><strong>Move smoothly, not in jumps.\u003c/strong> The page creeps down a fraction of a pixel per frame, instead of jumping a line every few seconds. Jumping makes you lose your place.\u003c/li><li><strong>Play and pause\u003c/strong> as one big obvious button.\u003c/li><li><strong>Speed as a percentage,\u003c/strong> a slider with the number next to it. 100% is a normal reading pace, and it runs from about 10% to 300%.\u003c/li><li><strong>Scrolling by hand stops it,\u003c/strong> exactly as if you pressed pause.\u003c/li><li><strong>It stops at the bottom,\u003c/strong> and the button goes back to \"play\".\u003c/li><li><strong>Pressing play at the bottom\u003c/strong> jumps back to the top and starts again, so the button is never a dead end.\u003c/li><li><strong>The speed is remembered\u003c/strong> across songs and reloads, so you set it once. One setting for all songs, not one per song — otherwise the app slowly fills up with settings you never chose on purpose.\u003c/li>\u003c/ul><p><strong>The screen must not go to sleep while it is scrolling.\u003c/strong> This does not happen by itself, which surprises most people: the computer decides you are idle based on real input — keyboard, mouse, trackpad — and a page scrolling itself is not input. So without help, the screen dims in the middle of a song. The app uses the Wake Lock API to tell the system \"do not sleep while I am doing this\", and lets go again the moment the scroll stops. Letting go matters as much as asking, or the machine stays awake forever.\u003c/p><p><strong>No countdown before it starts.\u003c/strong> The scroll begins as soon as you press play.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "Speed control should be percentage. so there will be 100 steps. Lets forget about the mobile touching etc for now. you said \"It stops at the end\", absolutely! also any manual scroll on the page should stop the autoscrolling as well as if the pause button is clicked. Also when it touches the bottom, the button should be as if the pause button is clicked again. And if the user clicks on \"play\" button when the scroll is at the bottom, then lets put the user to the very beginning. Screen should stay awake while scrolling on desktop, but wouldnt it be automatic? Countdown can be cool."
+        },
+        {
+          "author": "claude",
+          "text": "All of your rules are in. Two answers, and one small push-back.\n\nAgreed and written in: speed as a percentage (see §5), scrolling by hand stops it exactly like pause, it stops at the bottom and the button flips back to \"play\", and pressing play at the bottom jumps back to the top and starts again. That last one is a nice touch — the button is never a dead end.\n\nThe screen staying awake — no, it is not automatic, and this surprises most people. The computer dims and locks the screen based on real input: keyboard, mouse, trackpad. A page scrolling itself is not input, so as far as macOS knows you have been sitting still the whole time, and it will dim in the middle of a song. The fix is the Wake Lock API: the page asks the system \"do not sleep while I am doing this\", and lets go when the scroll stops. It works in Chrome on desktop, and it has to be released on pause or you keep the machine awake forever.\n\nCountdown — I suggest 3 seconds, shown big, starting when you press play, and cancelled if you press again. Fixed, not a setting. My only doubt: on a desktop you are sitting right at the keyboard, so it matters less than on a phone across the room. And if it turns out to be annoying, you will notice on day one. Fine either way — say yes and it goes in, say skip and it waits for Phase 2 with the phone work.\n\nSo, two open bits: Wake Lock in (I say yes), and countdown in or out?"
+        },
+        {
+          "author": "umit",
+          "text": "Wake lock, yes, definitely. Let's have it. So the screen doesn't die. And about the countdown, I actually didn't even understand your suggestions. Now what, let's completely ignore, cancel the countdown. Let's not do it for the MVP."
+        },
+        {
+          "author": "claude",
+          "text": "Wake Lock in, countdown out. Both written into the yellow box.\n\nOn the countdown — dropping it is the right call and my suggestion was weak. You are sitting at the keyboard on a desktop, so three seconds of waiting before every song buys you nothing. It also would have been one more thing to build and one more thing to get wrong.\n\nOne detail I wrote down about Wake Lock, because it is the part people forget: the app has to let go of the lock when the scroll stops. If it only ever asks and never releases, your machine stays awake after you close the song."
+        }
+      ]
+    },
+    {
+      "id": "strum",
+      "title": "9. The strum grid",
+      "plan": "<p>9 of the 28 songs carry one or more strumming patterns. Each one is a label, a row of strokes, and a row of beats, with one mark per slot:\u003c/p><pre>Intro / verse\n↓ · x ↑ · ↑ ↓ ↑\n1 &amp; 2 &amp; 3 &amp; 4 &amp;\u003c/pre><p><strong>What it has to do:\u003c/strong> the two rows must line up column by column, so this is the one place where a fixed-width font is right. The number of slots changes from song to song (4, 5, 8 and 12 all show up), so a 12-slot grid still has to line up. If it ever runs out of width, the grid alone scrolls sideways instead of wrapping.\u003c/p><p>A song with several patterns shows them all, one below the other, each with its own label. No tabs, no carousel, no picking one. A song with no pattern shows nothing at all — no empty box.\u003c/p><p><strong>One thing to know:\u003c/strong> the backend collects every pattern into one flat list. A pattern labelled \"Outro\" keeps its label but has no link to the outro part of the song, so the app cannot show it next to the outro — only in the list at the top. Fixing that is a backend change, and I would leave it unless you want it.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "you said \"A song with several patterns shows them stacked\", But what do you mean by them? It's hard for me to imagine the UI when you say stacked. If a song has several patterns, then we will just display the several patterns, right?"
+        },
+        {
+          "author": "claude",
+          "text": "Yes, exactly that. And \"stacked\" was a vague word, sorry. \"Them\" means the patterns.\n\nA song like Don't Panic has two, so you would see two grids, one below the other:\n\n  Intro / verse\n  ↓ · x ↑ · ↑ ↓ ↑\n  1 & 2 & 3 & 4 &\n\n  Strumming extended\n  ↓ · ↓ · ↓ ↑ ↑ ↓ ↑ ↓\n  1 & 2 & 3 & 4 & 5 &\n\nNo tabs, no carousel, no choosing one. Just print them all in order with their labels. I replaced the word in the plan text above."
+        }
+      ]
+    },
+    {
+      "id": "print",
+      "title": "10. Print",
+      "plan": "<p><strong>MOVED TO PHASE 2\u003c/strong> (decided in §2). Written down here so we do not argue about it again later.\u003c/p><p>When we do build it, this is what it means: you press Cmd+P and get a clean sheet with the song and nothing else.\u003c/p><p><strong>How it works.\u003c/strong> CSS has a second set of rules that only apply while the page is being printed. You write them in a <code>@media print\u003c/code> block:\u003c/p><pre>@media print {\n  .controls, .search, nav { display: none; }\n  body { background: white; color: black; }\n}\u003c/pre><p>The browser uses those rules only while it makes the printed page. So it is the same page and the same HTML — no second version, no copy of the template, no extra address. You press Cmd+P, the browser swaps in that block, the controls disappear, and the song prints on white paper.\u003c/p><p>A button is optional. It would just call <code>window.print()\u003c/code>, which opens the same box Cmd+P does. I would skip it — the browser already has the shortcut, and a print button on screen is clutter.\u003c/p><p><strong>What we would print:\u003c/strong> title, artist, info line, strum grid and the song. Black on white. A part of the song should not be split across two pages if we can help it, and a chord must never be split from the word under it by a page break.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "Here I couldn't really understand your plan. I mean, can you imagine a button to click that it prints? Are you going to... how are you going to achieve the print version being different than the actual... what the actual app displays?"
+        },
+        {
+          "author": "claude",
+          "text": "Fair — I skipped the how. The answer is in the plan text above now, but in short:\n\nCSS lets you write a second set of rules that only apply while the page is being printed. The browser swaps them in when you press Cmd+P, so the controls disappear and the background goes white. Same page, same HTML, no second version and no extra address.\n\nA button is optional. It would just call window.print(), which opens the same box Cmd+P does, so I would skip it.\n\nAll of this is Phase 2 now anyway, per §2. I marked the section as moved and left the how written down so it is not re-argued later."
+        }
+      ]
+    },
+    {
+      "id": "states",
+      "title": "11. When things are loading, empty, or broken",
+      "plan": "<p>Small stuff, but it is the difference between an app that feels finished and one that does not:\u003c/p><table><thead><tr><th>Situation\u003c/th><th>What the player sees\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>The song list is loading\u003c/td><td>Grey placeholder rows, roughly song-shaped. Not a spinner. The page should not jump when the real list arrives.\u003c/td>\u003c/tr><tr><td>The search finds nothing\u003c/td><td>\"No songs match <em>xyz\u003c/em>\" and a clear button. Not a blank screen.\u003c/td>\u003c/tr><tr><td>A song is loading\u003c/td><td>Title and artist show up straight away if we already have them from the list. The rest fills in after.\u003c/td>\u003c/tr><tr><td>Unknown song address (404 from the backend)\u003c/td><td>\"That song isn't here\" and a link back to the list.\u003c/td>\u003c/tr><tr><td>The backend is down\u003c/td><td>A plain message and a Retry button. No error dump, no spinner forever.\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p><strong>The app remembers nothing.\u003c/strong> No cache, no list of songs you opened before. That keeps the \"no offline mode\" rule from §2 clean. Remembering recent songs sounds cheap and then turns into questions about stale data, for a feature nobody asked for.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "I don't think the app should remember the last few songs I opened and I agree with the recommendations."
+        },
+        {
+          "author": "claude",
+          "text": "Agreed, and it keeps the §2 rule clean: no offline behaviour of any kind. Caching \"recent songs\" always sounds cheap, and then it turns into questions about stale data and when to clear the cache, for a feature nobody asked for."
+        }
+      ]
+    },
+    {
+      "id": "looks",
+      "title": "12. How the song page looks",
+      "plan": "<p>The plan never said anything about colour or size, and it should. This section covers how the song page looks while you are playing from it.\u003c/p><p><strong>Chords are a different colour from the lyrics.\u003c/strong> Lyrics are near-black on white. Chords are a strong colour — a deep blue — and bold. Your eye is doing two different jobs at once: reading the words, and catching the next chord change before it arrives. Same colour for both would make you hunt.\u003c/p><pre>Am               C            <- deep blue, bold\nBones, sinking like stones    <- near-black, normal\u003c/pre><p><strong>Everything else stays quiet\u003c/strong> so those two levels stand out:\u003c/p><ul><li>Part names like <code>[Verse 1]\u003c/code>: small, grey, spaced above the lines under them.\u003c/li><li>Notes at the end of a line like <code>(×2)\u003c/code>: grey, smaller.\u003c/li><li>The info line (key, capo, tempo): grey, small.\u003c/li><li>The strum grid: fixed-width font, near-black, no colour.\u003c/li>\u003c/ul><p><strong>Sizes.\u003c/strong> Lyrics are bigger than a normal web page — around 18–20px — because you are reading at arm's length with a guitar in the way. Chords are the same size as the lyrics, not smaller: they are the thing you are looking for.\u003c/p><p><strong>The colour must never be the only signal.\u003c/strong> Chords sit on their own row above the words, so someone who cannot tell the colours apart still reads the page perfectly. Colour only makes it faster. That also means printing in black (Phase 2, §10) loses nothing.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "scroll-start",
+      "title": "13. Where auto-scroll starts from",
+      "plan": "<p>You asked where the scroll begins, and you are right that it cannot be a fixed point: one song has a strum grid above the words and another does not, so the first lyric line sits at a different height on every song.\u003c/p><p><strong>So \"the top\" always means the first line of the song, not the top of the page.\u003c/strong> When you press play, the page first jumps so that the first line of the song sits just under the top edge, and only then starts scrolling. The title, the info line and the strum grid scroll away — you already read those before you started.\u003c/p><p><strong>But it only jumps when jumping is what you want:\u003c/strong>\u003c/p><table><thead><tr><th>When you press play…\u003c/th><th>What happens\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>You just opened the song and have not scrolled\u003c/td><td>Jump to the first line of the song, then start scrolling.\u003c/td>\u003c/tr><tr><td>You stopped in the middle to work on a chord\u003c/td><td>Carry on from exactly where you are. No jump.\u003c/td>\u003c/tr><tr><td>The scroll reached the bottom and stopped\u003c/td><td>Jump back to the first line of the song and start again.\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p>That last row also settles a loose end in §8, which said play-at-the-bottom goes \"back to the top\". It means back to the first line of the song, not the top of the page.\u003c/p><p><strong>Is it hard?\u003c/strong> No. The song block is one element on the page, and the browser can tell us how far down it starts. It is a few lines of code, and it works for any song no matter what sits above the words.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATA = JSON.parse(document.getElementById("thread-data").textContent);
+  var FILE_NAME = decodeURIComponent(location.pathname.split("/").pop() || "plan.html");
+  var DRAFT_KEY = "plan-thread-drafts:" + FILE_NAME;
+  var GENERAL_ID = "__general";   // draft key for the un-sectioned thread
+  var HANDLE_KEY = "handle:" + FILE_NAME;
+
+  var host = document.getElementById("sections");
+  var tocHost = document.getElementById("toc");
+  var statusEl = document.getElementById("status");
+  var connectBtn = document.getElementById("connect");
+  var saveBtn = document.getElementById("save");
+  var fileHandle = null;
+  var fileHandleName = "";
+  var pendingChanges = false;   // an Agree / Reopen click waiting to be saved
+
+  var nameSlot = document.getElementById("file-name");
+  if (nameSlot) { nameSlot.textContent = FILE_NAME; }
+
+  /* ---------- drafts: unsaved typing survives a reload ---------- */
+
+  function loadDrafts() {
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function saveDraft(id, text) {
+    var drafts = loadDrafts();
+    if (text) { drafts[id] = text; } else { delete drafts[id]; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+  }
+
+  /* ---------- render ---------- */
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function renderEntry(entry) {
+    var wrap = el("div", "entry " + entry.author);
+    wrap.appendChild(el("span", "who", entry.author === "umit" ? "Umit" : "Claude"));
+    wrap.appendChild(el("p", "body", entry.text));
+    return wrap;
+  }
+
+  // A proposal is the exact final wording Claude is offering, shown before anything
+  // closes. Nothing is settled until the owner presses the button.
+  function renderProposal(section) {
+    var box = el("div", "proposal");
+    box.appendChild(el("span", "lbl", "Final text — you have not agreed yet"));
+
+    if (section.proposedPlan) {
+      var body = document.createElement("div");
+      body.innerHTML = section.proposedPlan;
+      box.appendChild(body);
+      box.appendChild(el("p", "ask", "If you agree, this replaces the plan text above and becomes the final text for the whole section."));
+    } else {
+      box.appendChild(el("p", null, "Nothing new to show — the plan text above is already the final text."));
+      box.appendChild(el("p", "ask", "If you agree, the whole section is settled as written above, including any part we never talked about."));
+    }
+
+    var actions = el("div", "actions");
+
+    var agree = el("button", "agree", "Agree — close this section");
+    agree.addEventListener("click", function () { acceptProposal(section); });
+    actions.appendChild(agree);
+
+    box.appendChild(actions);
+    box.appendChild(el("p", "ask", "Do not agree? Just write a comment instead and the section stays open. Nothing is written to the file until you click “Save my comments”."));
+    return box;
+  }
+
+  // Accepting is the owner's act alone — this is the only path to "resolved".
+  function acceptProposal(section) {
+    section.status = "resolved";
+    if (section.proposedPlan) {
+      section.plan = section.proposedPlan;
+      delete section.proposedPlan;
+    }
+    delete section.agreed;
+    delete section.wasResolved;
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function render() {
+    var drafts = loadDrafts();
+    host.innerHTML = "";
+
+    DATA.sections.forEach(function (section) {
+      var card = el("div", "section");
+      card.id = "section-" + section.id;
+      card.appendChild(el("h2", null, section.title));
+
+      var resolved = section.status === "resolved";
+      var plan = el("div", "plan" + (resolved ? " agreed" : ""));
+      plan.appendChild(el("span", "lbl", resolved ? "Agreed" : "Plan"));
+      var planBody = document.createElement("div");
+      planBody.innerHTML = section.plan;   // authored by Claude, not user input
+      plan.appendChild(planBody);
+
+      if (resolved) {
+        var reopen = el("button", "reopen", "Reopen");
+        reopen.addEventListener("click", function () { reopenSection(section); });
+        plan.appendChild(reopen);
+      } else if (section.wasResolved) {
+        // Reopened by mistake, or you changed your mind back. The text has not moved
+        // since you agreed to it, so agreeing again is clear — it undoes the reopen.
+        var reAgree = el("button", "reopen", "Agree as-is again");
+        reAgree.addEventListener("click", function () { acceptProposal(section); });
+        plan.appendChild(reAgree);
+      }
+
+      card.appendChild(plan);
+
+      var thread = el("div", "thread " + (section.status || "open"));
+
+      if (resolved) {
+        if (section.entries.length) {
+          var history = el("details", "history");
+          history.appendChild(el("summary", null, "show discussion (" + section.entries.length + ")"));
+          section.entries.forEach(function (entry) { history.appendChild(renderEntry(entry)); });
+          thread.appendChild(history);
+        }
+      } else {
+        section.entries.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+        if (section.status === "proposed") { thread.appendChild(renderProposal(section)); }
+
+        var compose = el("div", "compose");
+        var box = el("textarea");
+        box.placeholder = "Your comment on this section…";
+        box.value = drafts[section.id] || "";
+        box.addEventListener("input", function () {
+          saveDraft(section.id, box.value);
+          markUnsaved();
+        });
+        compose.appendChild(box);
+
+        var row = el("div", "row");
+        row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+        compose.appendChild(row);
+
+        thread.appendChild(compose);
+      }
+
+      card.appendChild(thread);
+      host.appendChild(card);
+    });
+
+    renderGeneral(drafts);
+    renderToc();
+  }
+
+  // Reopening a settled section drops it back to plain discussion rather than back to
+  // a proposal — showing the Agree button again would just invite re-agreeing to the
+  // wording that was rejected. The old text is not restored; the thread holds the history.
+  function reopenSection(section) {
+    section.status = "open";
+    section.wasResolved = true;   // lets you take the reopen back
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function renderToc() {
+    if (!tocHost) { return; }
+    tocHost.innerHTML = "";
+
+    var settled = 0;
+    DATA.sections.forEach(function (section) {
+      if (section.status === "resolved") { settled++; }
+    });
+
+    tocHost.appendChild(el("h3", null, "Sections"));
+    tocHost.appendChild(el("p", "count", settled + " of " + DATA.sections.length + " agreed"));
+
+    DATA.sections.forEach(function (section) {
+      var link = el("a", section.status || "open", section.title);
+      link.href = "#section-" + section.id;
+      tocHost.appendChild(link);
+    });
+
+    var general = el("a", "open", "General");
+    general.href = "#section-" + GENERAL_ID;
+    tocHost.appendChild(general);
+  }
+
+  // A thread that belongs to no section — for things the plan missed, or a point that
+  // touches all of it. It never closes; there is nothing to agree to.
+  function renderGeneral(drafts) {
+    if (!DATA.general) { DATA.general = []; }
+
+    var card = el("div", "section");
+    card.id = "section-" + GENERAL_ID;
+    card.appendChild(el("h2", null, "General"));
+    card.appendChild(el("p", "muted", "Anything that does not fit one section: a topic the plan missed completely, something that touches several sections at once, or a question about the whole thing. This one never closes."));
+
+    var thread = el("div", "thread open");
+    DATA.general.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+    var compose = el("div", "compose");
+    var box = el("textarea");
+    box.placeholder = "Something we have not covered anywhere…";
+    box.value = drafts[GENERAL_ID] || "";
+    box.addEventListener("input", function () {
+      saveDraft(GENERAL_ID, box.value);
+      markUnsaved();
+    });
+    compose.appendChild(box);
+
+    var row = el("div", "row");
+    row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+    compose.appendChild(row);
+
+    thread.appendChild(compose);
+    card.appendChild(thread);
+    host.appendChild(card);
+  }
+
+  function markUnsaved() {
+    statusEl.innerHTML = "<span class='unsaved'>unsaved changes</span>";
+  }
+
+  /* ---------- remember the file handle between reloads ---------- */
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      var request = indexedDB.open("plan-thread", 1);
+      request.onupgradeneeded = function () { request.result.createObjectStore("kv"); };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error); };
+    });
+  }
+
+  function dbGet(key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv").objectStore("kv").get(key);
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function dbSet(key, value) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv", "readwrite").objectStore("kv").put(value, key);
+        req.onsuccess = function () { resolve(); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  /* ---------- connect / save ---------- */
+
+  var supported = typeof window.showOpenFilePicker === "function";
+
+  function setConnected(name) {
+    fileHandleName = name;
+    statusEl.textContent = "connected to " + name;
+    saveBtn.disabled = false;
+    connectBtn.textContent = "Reconnect file";
+  }
+
+  connectBtn.addEventListener("click", function () {
+    if (!supported) {
+      statusEl.textContent = "this browser can't write files — save will download instead";
+      saveBtn.disabled = false;
+      return;
+    }
+    window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: "HTML", accept: { "text/html": [".html"] } }]
+    }).then(function (handles) {
+      fileHandle = handles[0];
+      return dbSet(HANDLE_KEY, fileHandle).then(function () { setConnected(fileHandle.name); });
+    }).catch(function (error) {
+      if (error && error.name !== "AbortError") { statusEl.textContent = "connect failed: " + error.message; }
+    });
+  });
+
+  function collectComments() {
+    var drafts = loadDrafts();
+    var added = 0;
+    DATA.sections.forEach(function (section) {
+      var text = (drafts[section.id] || "").trim();
+      if (text && section.status !== "resolved") {
+        section.entries.push({ author: "umit", text: text });
+        added++;
+      }
+    });
+
+    var general = (drafts[GENERAL_ID] || "").trim();
+    if (general) {
+      if (!DATA.general) { DATA.general = []; }
+      DATA.general.push({ author: "umit", text: general });
+      added++;
+    }
+
+    return added;
+  }
+
+  function buildUpdatedHtml(originalText) {
+    var json = JSON.stringify(DATA, null, 2).split("</").join("\\u003c/");
+    var pattern = /(<script id="thread-data" type="application\/json">)[\s\S]*?(<\/script>)/;
+    if (!pattern.test(originalText)) { throw new Error("could not find the thread-data block"); }
+    return originalText.replace(pattern, function (match, open, close) {
+      return open + "\n" + json + "\n" + close;
+    });
+  }
+
+  function downloadFallback(text) {
+    var blob = new Blob([text], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = FILE_NAME;
+    link.click();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = "downloaded — move it into the repo, replacing the old file";
+  }
+
+  saveBtn.addEventListener("click", function () {
+    var added = collectComments();
+    if (!added && !pendingChanges) {
+      statusEl.textContent = "nothing to save — write a comment, or agree to a proposal";
+      return;
+    }
+
+    statusEl.textContent = "saving…";
+
+    var proceed = fileHandle
+      ? fileHandle.queryPermission({ mode: "readwrite" }).then(function (state) {
+          return state === "granted" ? "granted" : fileHandle.requestPermission({ mode: "readwrite" });
+        })
+      : Promise.resolve("denied");
+
+    proceed.then(function (state) {
+      if (state !== "granted") { throw new Error("no write permission"); }
+      return fileHandle.getFile()
+        .then(function (file) { return file.text(); })
+        .then(function (originalText) { return buildUpdatedHtml(originalText); })
+        .then(function (updated) {
+          return fileHandle.createWritable().then(function (writable) {
+            return writable.write(updated).then(function () { return writable.close(); });
+          });
+        })
+        .then(function () {
+          localStorage.removeItem(DRAFT_KEY);
+          pendingChanges = false;
+          statusEl.textContent = "saved to " + fileHandleName + " — tell Claude to read it";
+          render();
+        });
+    }).catch(function (error) {
+      // Fall back to a download so nothing is ever lost.
+      try {
+        downloadFallback(buildUpdatedHtml(document.documentElement.outerHTML));
+      } catch (inner) {
+        statusEl.textContent = "save failed: " + error.message;
+      }
+    });
+  });
+
+  /* ---------- boot ---------- */
+
+  render();
+
+  if (supported) {
+    dbGet(HANDLE_KEY).then(function (handle) {
+      if (!handle) { return; }
+      fileHandle = handle;
+      return handle.queryPermission({ mode: "readwrite" }).then(function (state) {
+        setConnected(handle.name);
+        if (state !== "granted") { statusEl.textContent = "connected to " + handle.name + " (will ask permission on save)"; }
+      });
+    }).catch(function () { /* first run, nothing stored */ });
+  } else {
+    statusEl.textContent = "this browser can't write files — save will download instead";
+    saveBtn.disabled = false;
+  }
+})();
+</script>

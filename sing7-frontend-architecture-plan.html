@@ -1,0 +1,784 @@
+<meta charset="utf-8">
+<title>SING7 — React Architecture</title>
+<style>
+  :root {
+    --page: #f4f4f2;
+    --paper: #ffffff;
+    --text: #202124;
+    --muted: #61656b;
+    --line: #d9dadd;
+    --soft: #f7f7f6;
+    --code: #f1f2f3;
+    --accent: #2f5f8f;
+    --good: #2f7d43;
+    --warn: #9a6b00;
+    --you: #8a4b9c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background: var(--page);
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.55;
+  }
+  html { scroll-behavior: smooth; }
+  /* The sidebar hugs the left edge; the paper stays a readable width and centres
+     itself in whatever space is left, so no gap opens up beside the sidebar. */
+  .layout {
+    width: calc(100% - 32px); margin: 24px auto 80px;
+    display: flex; gap: 24px; align-items: flex-start;
+  }
+  main {
+    flex: 1; min-width: 0; max-width: 1040px;
+    padding: 32px 40px 56px; background: var(--paper); border: 1px solid var(--line);
+  }
+
+  /* ---- sidebar ---- */
+  .toc {
+    position: sticky; top: 24px; align-self: flex-start;
+    width: 215px; flex: none;
+    max-height: calc(100vh - 48px); overflow-y: auto;
+    padding: 14px 12px; background: var(--paper); border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .toc h3 {
+    margin: 0 0 4px; font-size: 11px; font-weight: bold;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  }
+  .toc .count { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+  .toc a {
+    display: block; position: relative;
+    padding: 5px 6px 5px 20px; margin-bottom: 1px;
+    color: var(--text); text-decoration: none; line-height: 1.35;
+  }
+  .toc a:hover { background: var(--soft); }
+  .toc a::before { content: "●"; position: absolute; left: 5px; }
+  .toc a.open::before { color: #c8cacd; }
+  .toc a.proposed::before { color: var(--warn); }
+  .toc a.resolved::before { color: var(--good); }
+  .toc a.resolved { color: var(--muted); }
+  @media (max-width: 1080px) { .toc { display: none; } }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  h2 { margin: 38px 0 10px; padding-top: 8px; border-top: 2px solid var(--text); font-size: 22px; }
+  h3 { margin: 18px 0 6px; font-size: 16px; }
+  p { margin: 8px 0 14px; }
+  ul, ol { margin: 8px 0 14px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .muted { color: var(--muted); }
+  code {
+    font-family: Consolas, Monaco, monospace; font-size: .94em;
+    background: var(--code); padding: 0 3px; border-radius: 2px;
+  }
+  pre {
+    margin: 0 0 14px; padding: 12px; overflow: auto;
+    background: var(--code); border: 1px solid #d0d2d5;
+    font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--soft); }
+
+  /* ---- toolbar ---- */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 24px; padding: 10px 14px;
+    background: #eef1f5; border: 1px solid #c7d4e2;
+  }
+  .bar .status { margin-left: auto; font-size: 13px; color: var(--muted); }
+  button {
+    font-family: inherit; font-size: 13px; font-weight: bold;
+    padding: 7px 13px; cursor: pointer;
+    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 3px;
+  }
+  button.ghost { background: #fff; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .howto { margin: 0 0 26px; padding: 12px 14px; background: #fff9e8; border: 1px solid #ead9a8; }
+  .howto ol { margin: 6px 0 0; }
+
+  /* ---- plan section ---- */
+  .section { margin: 0 0 8px; scroll-margin-top: 16px; }
+  .plan { padding: 12px 14px; background: var(--soft); border-left: 3px solid var(--accent); }
+  .plan .lbl {
+    display: block; margin-bottom: 4px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--accent);
+  }
+  .plan > div > *:first-child { margin-top: 0; }
+  .plan > div > *:last-child { margin-bottom: 0; }
+
+  /* ---- thread ---- */
+  .thread { margin: 12px 0 0; padding: 0 0 0 14px; border-left: 3px solid var(--line); }
+  .thread.resolved { border-left-color: var(--good); }
+  .thread.proposed { border-left-color: var(--warn); }
+  .entry { margin: 0 0 10px; }
+  .entry .who {
+    display: inline-block; margin-bottom: 2px;
+    font-size: 11px; font-weight: bold; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .entry.umit .who { color: var(--you); }
+  .entry.claude .who { color: var(--accent); }
+  .entry .body { margin: 0; padding: 8px 11px; border: 1px solid var(--line); background: #fff; white-space: pre-wrap; }
+  .entry.umit .body { border-left: 3px solid var(--you); }
+  .entry.claude .body { border-left: 3px solid var(--accent); }
+
+  details.history { margin: 0 0 10px; }
+  details.history summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details.history[open] summary { margin-bottom: 10px; }
+  details.history .entry .body { color: var(--muted); text-decoration: line-through; background: #fbfbfa; }
+  details.history .entry .who { text-decoration: line-through; opacity: .7; }
+
+  /* A resolved section has ONE block: the plan text itself, turned green and
+     relabelled. There is no separate summary — a summary would drift. */
+  .plan.agreed { background: #eef7ee; border-left-color: var(--good); }
+  .plan.agreed .lbl { color: var(--good); }
+  .plan .reopen {
+    margin-top: 12px; padding: 3px 10px; font-size: 12px; font-weight: normal;
+    background: #fff; color: var(--muted); border-color: var(--line);
+  }
+  .plan .reopen:hover { color: var(--text); }
+
+  .proposal { margin: 0 0 10px; padding: 10px 12px; background: #fff9e8; border: 1px solid #ead9a8; border-left: 3px solid var(--warn); }
+  .proposal .lbl {
+    display: block; margin-bottom: 3px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--warn);
+  }
+  .proposal .ask { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .proposal .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .proposal button.agree { background: var(--good); border-color: var(--good); }
+  .proposal details { margin-top: 8px; }
+  .proposal details summary { cursor: pointer; font-size: 13px; color: var(--warn); }
+  .proposal details > div { margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--line); }
+
+  .compose { margin: 4px 0 0; }
+  .compose textarea {
+    width: 100%; min-height: 68px; padding: 8px 10px;
+    font-family: inherit; font-size: 14px; line-height: 1.5;
+    border: 1px solid var(--line); background: #fff; resize: vertical;
+  }
+  .compose textarea:focus { outline: 2px solid var(--you); outline-offset: -1px; }
+  .compose .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .compose .hint { font-size: 12px; color: var(--muted); }
+  .unsaved { color: var(--warn); font-weight: bold; }
+</style>
+
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+  <h1>SING7 — React Architecture</h1>
+  <p class="muted">How the React app is built: which libraries, which folders, which components, and where each piece of logic lives. The <em>what</em> is already agreed in sing7-frontend-requirements.md — this page is only the <em>how</em>. The SvelteKit app comes after, and copies every decision it can.</p>
+
+  <div class="bar">
+    <button id="connect" class="ghost">Connect this file</button>
+    <button id="save" disabled>Save my comments</button>
+    <span class="status" id="status">not connected</span>
+  </div>
+
+  <div class="howto">
+    <strong>How to use this page</strong>
+    <ol>
+      <li>Click <strong>Connect this file</strong> and pick <code id="file-name">this file</code> in the box that opens. You only do this once per browser session.</li>
+      <li>Write a comment under any section, then click <strong>Save my comments</strong>. Your text is written into this HTML file.</li>
+      <li>Tell Claude you saved. It reads the file, writes an answer into it, and tells you to reload.</li>
+      <li>When we agree, Claude puts the final text in a yellow box. Only you can close a section: press <strong>Agree</strong>, then <strong>Save my comments</strong>. If you do not agree, just write a comment instead.</li>
+    </ol>
+  </div>
+
+  <div id="sections"></div>
+
+</main>
+</div>
+
+<script id="thread-data" type="application/json">
+{
+  "general": [
+    {
+      "author": "umit",
+      "text": "Do we use some sort of a compiler? is React compiler a separate package and we dont have it? Vite's react plugin plays this role? why dont we have/use React Compiler?"
+    },
+    {
+      "author": "umit",
+      "text": "Instead of the wake lock, do you think we can figure out what prevents screen to fade away? I don't know, maybe some events, maybe, I don't know what. You can tell me first this. What prevents screen to fade away? And then my question is going to be that instead of the wake lock, can we just fire this event, I don't know, every 30 seconds or every minute, if the play button, if the song is being played, so if the auto scroll is on, do you think it makes sense to go for this approach and completely remove the wake lock? So we wouldn't need to ask a permission or something, but tell me what you think about it."
+    },
+    {
+      "author": "umit",
+      "text": "And another thing is that which is not in our HTML file, and I want to ask if you think that we need that, like should we, should we write down the exact states and that can be a server state, or a client state, or any other state that is owned by something else, should we write down all the states and which component kind of owns them?"
+    },
+    {
+      "author": "claude",
+      "text": "Three good questions. Taking them one at a time.\n\n=== 1) React Compiler ===\n\nNo, we do not have it, and Vite's react plugin does not do it. That plugin only does two things: turn JSX into JavaScript, and hot-reload your components while you edit. It never rewrites your code for speed.\n\nThe React Compiler is a separate package (babel-plugin-react-compiler). What it does: it reads your components and adds the memoization by itself, so you stop writing useMemo and useCallback by hand. It is a build-time tool — nothing extra ships to the browser.\n\nShould we use it? Yes, and it is one line, because @vitejs/plugin-react already runs Babel:\n\n  react({ babel: { plugins: [\"babel-plugin-react-compiler\"] } })\n\nBut let me be honest about what it buys us HERE: almost nothing measurable. This app has a handful of components and 28 songs. Nothing is slow. The two real reasons to add it are that you want to practise the current stack, and that it removes hand-written memoization — the useMemo I put in §4 for filtering the song list simply goes away.\n\nOne warning, since it is the whole point of the tool: the compiler only works on components that follow the rules of React. If a component mutates props or state directly, the compiler either skips it or produces something surprising. In practice that means the lint rules matter more once it is on.\n\n=== 2) Instead of Wake Lock, fire some event every 30 seconds? ===\n\nI have to give you a straight no here, and correct one thing you assumed.\n\nWhat actually keeps the screen awake: the operating system decides you are idle from REAL HARDWARE INPUT — an actual key press, actual mouse movement, actual trackpad touch. Not DOM events. A web page cannot create hardware input. If you write dispatchEvent(new MouseEvent(\"mousemove\")) it travels through the page's own JavaScript and never leaves the browser — the operating system does not see it at all. That is a hard security wall, and it is there for a good reason: a page that could fake input could click anything on your machine.\n\nSo the \"fire an event every 30 seconds\" idea cannot work. There is no event to fire.\n\nThere IS one old trick that does work: play a tiny invisible looping video. Video playback tells the system \"media is playing, do not sleep\". That is what NoSleep.js does, and it was the standard hack before Wake Lock existed. But it needs a user gesture to start, it keeps a video decoder running for no reason, some browsers have started ignoring muted video for this, and it is more fragile than the real API.\n\nNow the thing I think you assumed: **Wake Lock does not show a permission popup.** There is no dialog, nothing for the user to accept or refuse. The browser grants it automatically as long as the page is visible, and drops it when you switch tab. That is the entire behaviour. It is about 15 lines:\n\n  const lock = await navigator.wakeLock.request(\"screen\");   // starts scrolling\n  await lock.release();                                       // stops scrolling\n\nSo the choice is really: the purpose-built API with no prompt (Wake Lock), an old video hack, or nothing at all and the screen dims mid-song. I would keep Wake Lock. But it is your call, and if the popup was the only thing bothering you, that reason is not real. I have written this up in §9 so you can agree or delete it there.\n\n=== 3) Write down every piece of state and who owns it? ===\n\nYes. Good idea, and it was a gap. I added §12, \"Who owns which piece of state\": one table with every piece of state in the app, where it lives, who writes it, who reads it. It covers server state (Query), client state (Jotai), state in the address, state the browser already owns, and the couple of refs.\n\nThe reason it is worth writing down: the rule of this app is that each piece of state has exactly ONE owner and is never copied. A table makes a broken rule obvious — if two rows claim to own the same thing, that is the bug."
+    },
+    {
+      "author": "umit",
+      "text": "I was just asking about the React compiler, I dont want to use it in this project. So please revert the changes you made in your last replies to sections because of the decision of using React compiler because we will not use it. Or if you dont want to revert the changes because they are already there, then create a new one please."
+    },
+    {
+      "author": "claude",
+      "text": "My mistake, and a fair complaint. You asked a question and I treated it as a decision, then wrote it into two sections. Reverting, not creating anything new.\n\nWhat I am taking back out:\n\n- §1 — the React Compiler row leaves the library table.\n- §2 — the stack line goes back to \"Vite 8, React 19, TypeScript\".\n\nBoth of those are in the yellow boxes, which you have not agreed to, so nothing settled is being touched.\n\nOne thing that follows, so it does not surprise you later. Without the compiler, the normal React habit is to wrap the song-list filtering in useMemo, and my first draft of §4 did exactly that. I would still not bother: filtering 28 items is a few microseconds, and it happens only when you type. useMemo there would be ceremony, not speed. If the library ever grows to thousands of songs, that is the moment to add it — and it is a one-line change at that point.\n\nSo §4 stays as it is: the filter is a plain function, with or without a compiler.\n\nFor what it is worth, I still think the compiler is a reasonable thing to try one day, but \"I asked, I did not ask for it\" is the right correction and it was my error to make."
+    },
+    {
+      "author": "umit",
+      "text": "lets keep the Wake lock."
+    },
+    {
+      "author": "umit",
+      "text": "Also, another thing that we did not define an execution order. Don't you think we need it? Because since I will be working with a React application after a very long time, so initially I would like to have a better understanding about your output. So if we go step by step, rather than you executing the whole plan, I would potentially get lost in this. But if we execute step by step, then I can track better. I can ask more questions specific to the executed step, and I can end up having a better understanding overall about the repo. So I was thinking if it's possible to plan some execution order, what do you think about it?"
+    },
+    {
+      "author": "claude",
+      "text": "Wake Lock stays — noted, §9 already says so.\n\nOn the execution order: yes, and I think it is the most useful thing you have asked for today. Building the whole app in one go would give you a folder of files and no idea how they got there. That is the opposite of what you want.\n\nThe rule I would use for cutting the steps: **every step must end with something you can SEE in the browser.** Not \"the API layer is done\" — that is invisible and you cannot judge it. Something on screen, every time.\n\nHere is the order I suggest. Ten steps.\n\n  1. An empty app that runs. pnpm, Vite, React, TypeScript, Tailwind, the Vite proxy to :8080.\n     You see: a blank page at localhost:5173, and /rpc reaching the Go server.\n\n  2. The API client and one real call. Copy client.gen.ts in, wire up Query, print the\n     song titles as plain unstyled text.\n     You see: the names of your 28 real songs on screen. This is the moment the two\n     halves of the app meet, and if anything is wrong with the plumbing it shows here.\n\n  3. The router and the two routes. Plain links, no styling.\n     You see: clicking a title opens a song page with its title on it. Back works.\n\n  4. The song list screen for real. Rows, the search box, ?q= in the address, filterSongs\n     and its tests.\n     You see: typing filters the list, the address changes, Back keeps your search.\n\n  5. Chords above lyrics. SongBody / SongSection / SongLine / ChordPart, and the @theme\n     colours. This is the heart of the app and the step I would slow down on.\n     You see: a real song, chords over the right words.\n\n  6. The rest of the song page. The info line, the strum grid, the Song info box.\n     You see: a complete song page.\n\n  7. Auto-scroll. The atoms, the control bar, useAutoScroll: play, pause, speed,\n     stopping at the bottom, a hand scroll stopping it, and where it starts from.\n     You see: the song scrolls by itself and you can steer it.\n\n  8. Spacebar and Wake Lock.\n     You see: space starts and stops it, and the screen stays awake.\n\n  9. The awkward states. Skeleton rows, no search results, 404, backend down with Retry.\n     You see: pull the plug on the Go server and the app says something sensible.\n\n  10. Tests and tooling. The Vitest cases from §10, Biome clean, one Playwright run.\n      You see: a green test run.\n\nWhy this order: steps 1–3 are the skeleton, and they are deliberately ugly so that when\nsomething breaks there is almost nothing to blame. Step 5 is the one with real thinking\nin it, and by then everything around it already works, so a bug there is a bug in the\nrendering and nowhere else. Steps 7–8 are the trickiest code, but they touch nothing\nthat came before them. Step 9 is polish, and step 10 is the safety net.\n\nHow I would run each step: I build it, tell you what to run to see it, and for anything\nnot trivial I write one of the throwaway explanation pages so you can read what happened\nbefore you ask questions. Then we move on. If a step turns out to be too big to follow,\nwe cut it in half — that is a normal thing to say, not a failure.\n\nI suggest this becomes its own page, like this one, one section per step, so you can\nreorder or split them before we start rather than halfway through."
+    }
+  ],
+  "sections": [
+    {
+      "id": "library-rule",
+      "title": "1. How we pick libraries",
+      "plan": "<p><strong>The rule: use anything from <code>frontend-doc.md\u003c/code> that has a real job in this app. Do not invent a need for the rest.\u003c/strong> The point is to practise the real stack, so \"we could get away without it\" is not a reason to drop something. But building a login screen just because the doc lists an auth library would be inventing work.\u003c/p><p>What we use, and the job each one does:\u003c/p><table><thead><tr><th>Library\u003c/th><th>Its job here\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>React 19 + TypeScript\u003c/td><td>The app.\u003c/td>\u003c/tr><tr><td>Vite 8 + plugin-react\u003c/td><td>Dev server and build.\u003c/td>\u003c/tr><tr><td>TanStack Router\u003c/td><td>Two routes, and it owns the <code>?q=\u003c/code> search value.\u003c/td>\u003c/tr><tr><td>TanStack Query\u003c/td><td>Fetching the song list and each song, plus loading and error states.\u003c/td>\u003c/tr><tr><td>Jotai\u003c/td><td>Scroll speed and is-it-running, shared between the control bar and the scroll code.\u003c/td>\u003c/tr><tr><td>Tailwind CSS 4\u003c/td><td>All styling.\u003c/td>\u003c/tr><tr><td>webrpc generated client\u003c/td><td>Every backend call. Hand-written fetch stays banned.\u003c/td>\u003c/tr><tr><td>Zod\u003c/td><td>Checking the <code>?q=\u003c/code> value from the address, which is the one piece of genuinely unchecked input in the app.\u003c/td>\u003c/tr><tr><td>lucide-react\u003c/td><td>Play and pause icons.\u003c/td>\u003c/tr><tr><td>class-variance-authority\u003c/td><td>Button variants, in one file.\u003c/td>\u003c/tr><tr><td>Biome\u003c/td><td>Lint and format.\u003c/td>\u003c/tr><tr><td>Vitest + Testing Library\u003c/td><td>Unit tests for the renderer and the scroll hook.\u003c/td>\u003c/tr><tr><td>Playwright\u003c/td><td>One end-to-end run: search, open a song, scroll.\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p>Two of these are close calls, and I would rather flag them than sneak them past you. <strong>Zod\u003c/strong> mostly overlaps with the generated webrpc client, which is already typed — its only real job is the search value from the address. <strong>class-variance-authority\u003c/strong> is a lot of ceremony for about three buttons. Both are in because you want the practice, not because the app is begging for them.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "I agree with all the choices, but the thing is I would like to delete from the list that the ones that are out. I would also delete the ones that are open, and I would also delete the ones that are later. So basically, only the ones that are in can stay. And yeah, and that's all, that's the change I would like to see in the plan."
+        },
+        {
+          "author": "claude",
+          "text": "Done — the yellow box has the In list only.\n\nI was going to argue for keeping the Out rows so nobody re-adds Sentry in six months. Then I realised the argument is wrong: the reasons are still here, in this thread, one click away under \"show discussion\". Nothing is lost by taking them out of the document, and you are right that a table of things we are not doing is noise in a plan about what we are doing.\n\nOne addition while I was in there: React Compiler, from your General question. It belongs in this list.\n\nSame rule applied everywhere else on this page from now on: the plan text says what we do, and the reasons we said no live in the threads."
+        }
+      ]
+    },
+    {
+      "id": "setup",
+      "title": "2. Project setup and where the app lives",
+      "plan": "<p>The React app lives in <code>web-react/\u003c/code> at the repo root, beside the Go code, as its own project with its own <code>node_modules\u003c/code>. Package manager: <strong>pnpm\u003c/strong>.\u003c/p><pre>sing7/\n├── cmd/ internal/ songs/ proto/    the Go backend\n├── web-react/                      this app\n├── web-svelte/                     later\n├── sing7-frontend-requirements.md  what we are building\n└── docker-compose.yml              later\u003c/pre><p><strong>Stack:\u003c/strong> Vite 8, React 19, TypeScript.<code>pnpm dev\u003c/code> in one terminal, <code>go run ./cmd/server\u003c/code> in another.\u003c/p><p><strong>Talking to the backend while developing.\u003c/strong> The Go server is on <code>:8080\u003c/code> and Vite is on <code>:5173\u003c/code>. Different ports mean the browser treats them as two different sites, so it blocks the calls (CORS). The fix is a <strong>Vite proxy\u003c/strong>: Vite forwards anything starting with <code>/rpc\u003c/code> to <code>:8080\u003c/code>, so as far as the browser is concerned everything comes from one place.\u003c/p><pre>// vite.config.ts\nserver: {\n  proxy: { \"/rpc\": \"http://localhost:8080\" }\n}\u003c/pre><p>This also matches how it will work once deployed, with both behind one address, so there is nothing to undo later.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "Yeah, no turborepo. I don't think we need it, but I would like to use PMPM instead of NPM. Also, if you are going to suggest a final text, you don't need to include what we are not going to use in this case because it's only noise, right? It is not important if you are avoiding something entirely. I don't think it's worth mentioning it.\nAnd also, yes, let's go for the Vite proxy option."
+        },
+        {
+          "author": "claude",
+          "text": "All three in: pnpm, no Turborepo, Vite proxy. And you are right about the noise — I cut the whole \"to decide\" paragraph rather than leaving a line saying we decided against Turborepo. The reason is in this thread if anyone ever asks.\n\nI added the actual proxy config to the text, because it is three lines and it is the kind of thing that is annoying to look up.\n\nOne small thing that follows from pnpm and is worth knowing: pnpm is stricter than npm about packages you did not declare. If a library quietly relies on something it did not list, npm lets it through and pnpm does not. It bites people once, and the fix is just to install the missing package yourself."
+        }
+      ]
+    },
+    {
+      "id": "routing",
+      "title": "3. Routing",
+      "plan": "<p><strong>TanStack Router, file-based.\u003c/strong> Routes are files, and the router plugin generates the type-safe route tree.\u003c/p><pre>src/routes/\n  __root.tsx          the shell around every page\n  index.tsx           /            the song list\n  songs.$slug.tsx     /songs/xxx   one song\n  $.tsx               anything else -> not found\u003c/pre><p><strong>The search value lives in the address, and the router owns it.\u003c/strong> TanStack Router has a <code>validateSearch\u003c/code> hook on a route: it reads the query string, checks it, and hands you a typed object. This is where Zod earns its place — the address is text a user can edit, so it is the one place in the app with genuinely unchecked input.\u003c/p><pre>// routes/index.tsx\nvalidateSearch: z.object({ q: z.string().optional() })\u003c/pre><p>Then the search box reads <code>q\u003c/code> from the route and writes it back with a navigate call using <code>replace: true\u003c/code>, which is TanStack Router's wrapper around <code>history.replaceState\u003c/code>. That is what stops the history filling up with one entry per letter.\u003c/p><p><strong>Nothing else goes in the address.\u003c/strong> Scroll speed and is-it-running are not shareable and not worth a link, so they stay in Jotai (§5).\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "server-data",
+      "title": "4. Getting data from the backend",
+      "plan": "<p><strong>TanStack Query\u003c/strong> handles both calls. Two query hooks, nothing else:\u003c/p><pre>useSongList()      -> ListSongs()      called once, at startup\nuseSong(slug)      -> GetSong(slug)    called when a song page opens\u003c/pre><p><strong>The important setting: this data never changes while the app is open.\u003c/strong> The backend parses the song files once at boot and serves them from memory, so a song cannot change under us. So both queries get <code>staleTime: Infinity\u003c/code>. Query fetches once and then answers from memory — no refetch when you switch tabs, no refetch when you come back to the list, no flash of a loading state on the second visit.\u003c/p><p><strong>Why use Query at all for two calls?\u003c/strong> Fair question, since we could write two <code>useEffect\u003c/code> fetches. What it buys us here:\u003c/p><ul><li>The loading, empty and error states from the requirements come for free, in one shape, instead of three hand-rolled <code>isLoading\u003c/code> flags.\u003c/li><li>Going list → song → back does not refetch anything.\u003c/li><li>The Retry button for \"backend is down\" is one call to <code>refetch()\u003c/code>.\u003c/li>\u003c/ul><p><strong>The API client is copied in by hand.\u003c/strong> The backend already has the script that turns <code>proto/sing7.ridl\u003c/code> into a TypeScript client. We do not repeat that here — the generated file is copied into <code>src/rpc/\u003c/code> and never edited.\u003c/p><p>Because it is copied and not generated, one thing has to be remembered by a person: <strong>when the <code>.ridl\u003c/code> changes, the copy has to be made again.\u003c/strong> The file carries a comment saying exactly that, with the command that produces it, so the next reader is not left guessing where it came from.\u003c/p><p><code>src/api/client.ts\u003c/code> wraps that generated client with the base address, which comes from <code>VITE_API_URL\u003c/code>, so it can be pointed at a real domain at deploy time.\u003c/p><p><strong>The filtering does not touch Query.\u003c/strong> The list is fetched once. Filtering happens inside a useMemo with two dependencies: the song list, and the<code>q\u003c/code> from the address. The function it wraps, filterSongs, stays a plain function in song-list/, so it can be tested on its own with no React around it. The useMemo is not there for speed — filtering 28 items costs nothing — it is there so the filtered array keeps the same identity between renders when neither the songs nor the search text changed.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "you said \"the webrpc TypeScript client is generated from proto/sing7.ridl into src/rpc/ by a script\", That is not the case. For now, I will just simply by hand copy the generated TypeScript client, that's how it will work initially. So we don't need any script to generate any client, a TypeScript client, because that script already exists in the back-end server code, and we will continue using that script. And the output, I will be copy-pasting by hand."
+        },
+        {
+          "author": "claude",
+          "text": "Understood, and it is the right call — one script, on the side that owns the contract. Building a second generate step in the frontend would just be a copy of something that already works.\n\nI corrected the text. One thing I added, because copying by hand has a cost worth naming: when the .ridl changes, a person has to remember to copy the file again. Nothing warns you. So the copied file gets a comment at the top saying where it came from and which command makes it, and that is the only defence.\n\nIt is a small risk today, with the backend done and the contract settled. It would get sharper if the .ridl started changing often — and at that point a script in the frontend would earn its place. Not now."
+        },
+        {
+          "author": "umit",
+          "text": "I want to use useMemo for the 28 songs, it doesnt need to save much, it is the correct pattern and here is my chance to use it. dont you agree?"
+        },
+        {
+          "author": "claude",
+          "text": "Yes, agreed — with one small correction to the reason, because I think the honest reason is better than \"it is the correct pattern\".\n\nuseMemo here saves no time. Filtering 28 items is free, and it only happens while you type. If speed were the only argument, it would be ceremony.\n\nThe real reason it belongs is IDENTITY. Without useMemo, every render makes a brand new array, even when nothing changed. Right now nothing cares — the rows are drawn straight from it. But the moment anything downstream compares by identity (a memoized row component, another hook's dependency list, a useEffect that reacts to the list), a fresh array every render quietly breaks it, and that bug is genuinely hard to see. useMemo means the array only changes when the songs or the search text change, which is exactly when it should.\n\nSo: agreed, and the plan says useMemo with the two dependencies. filterSongs itself stays a plain function in song-list/, so it is still testable with no React around it — the memo wraps it, it does not absorb it.\n\nOne thing to know for later: if you ever do add the React Compiler, it writes this memoization itself and the hand-written useMemo becomes redundant. Not a problem, just the reason I originally left it out."
+        }
+      ]
+    },
+    {
+      "id": "client-state",
+      "title": "5. Client state with Jotai",
+      "plan": "<p>Almost nothing in this app is client state. Being honest about that is what keeps it simple. The full list, in <code>src/scroll/atoms.ts\u003c/code>:\u003c/p><pre>scrollSpeedAtom       number, 10-300, the percentage     persisted\nisAutoScrollingAtom   boolean, is auto-scroll running   not persisted\u003c/pre><p><strong>Why <code>isAutoScrolling\u003c/code> and not <code>isScrolling\u003c/code>:\u003c/strong> the page scrolls when you turn the wheel too. <code>isScrolling\u003c/code> would sound like it means \"the page is moving\", which is a different and larger idea. <code>isAutoScrolling\u003c/code> says the one thing it means: our loop is running.\u003c/p><p><strong>Why not <code>isPlaying\u003c/code>:\u003c/strong> the button is a play button, but nothing is playing — no sound comes out of this app. A future reader seeing <code>isPlaying\u003c/code> would reasonably go looking for audio. The button can borrow music-player language because that is what people recognise; the code should say what it actually does.\u003c/p><p><strong>Why Jotai and not <code>useState\u003c/code>?\u003c/strong> Because these two values are read and written in two places far apart in the tree: the control bar at the bottom of the page, and the scroll loop that drives the window. Passing setters down through the page would be the classic mess. Jotai gives both places direct access, with no provider plumbing.\u003c/p><p><strong>Speed is remembered across songs and reloads,\u003c/strong> which the requirements ask for, so <code>scrollSpeedAtom\u003c/code> uses <code>atomWithStorage\u003c/code> — Jotai's localStorage-backed atom. One line, not a feature to build.\u003c/p><p><strong>What deliberately is not an atom:\u003c/strong>\u003c/p><ul><li>The search text — it lives in the address (§3).\u003c/li><li>The song list and the current song — they live in Query (§4).\u003c/li><li>The scroll position — the browser already owns it; copying it into state would mean keeping two truths in step.\u003c/li>\u003c/ul><p>The rule for this whole app: <strong>every piece of state has exactly one owner, and Jotai is only for what has no better home.\u003c/strong> §12 lists them all.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "Do you think a better name could be instead of \"isScrollingAtom\"? Do you think it can be \"isAutoScrollingAtom\"? This is my first question. I'm not leaning towards any of the options. I'm just brainstorming and another one is that do you think we should name this state in a way that it reflects that if the song is being played, so for example the state name, the variable name could be \"isBeingPlayed\" or \"isSongPlaying\" or something like that, what do you think?"
+        },
+        {
+          "author": "claude",
+          "text": "I have an opinion on both, and they point the same way.\n\n1) isAutoScrollingAtom, yes. Better than mine. \"isScrolling\" is ambiguous because the page also scrolls when you turn the wheel — the name would describe something true in two different situations, and only one of them is what we mean. \"isAutoScrolling\" says our loop is running, and nothing else.\n\n2) isPlaying / isSongPlaying — I would not. The button says play, and that is right, because that is the word people recognise on a control bar. But no song is playing: nothing makes a sound. Someone reading isSongPlaying in six months will look for the audio code and find none. There is also a real chance we add actual playback one day (a backing track, a metronome) and then the name is taken by the wrong thing.\n\nSo: the UI can borrow music-player language, the code should say what it does. isAutoScrollingAtom.\n\nWhile writing this I also moved the atoms out of state/ and into scroll/atoms.ts — see §7, where you caught that being inconsistent."
+        }
+      ]
+    },
+    {
+      "id": "styling",
+      "title": "6. Styling with Tailwind",
+      "plan": "<p><strong>Tailwind CSS 4\u003c/strong>, wired in with <code>@tailwindcss/vite\u003c/code>. Tailwind 4 has no <code>tailwind.config.js\u003c/code> — the design values live in CSS, in an <code>@theme\u003c/code> block, which is a good fit here because we already agreed the exact colours and sizes in the requirements.\u003c/p><pre>/* src/styles.css */\n@import \"tailwindcss\";\n\n@theme {\n  --color-chord:   #1d4ed8;   /* deep blue, bold  */\n  --color-lyric:   #202124;   /* near-black       */\n  --color-quiet:   #61656b;   /* part names, (x2) */\n  --text-lyric:    1.25rem;   /* 20px             */\n}\u003c/pre><p>So the four decisions from §10 of the requirements become four named values, used everywhere as <code>text-chord\u003c/code>, <code>text-lyric\u003c/code> and so on. If we ever change the chord blue, we change it in one line.\u003c/p><p><strong>Plain Tailwind classes in the components, with two exceptions:\u003c/strong>\u003c/p><ul><li><strong>Buttons\u003c/strong> use class-variance-authority, in one <code>Button.tsx\u003c/code>. There are about three of them, so this is more about doing it the normal way than about need.\u003c/li><li><strong>The chord-over-lyric block\u003c/strong> gets a couple of small CSS classes of its own in <code>styles.css\u003c/code>, not a long string of Tailwind classes. It is the one piece of real layout in the app, it is the thing most likely to need tuning, and a named class is easier to find and change than an inline list.\u003c/li>\u003c/ul><p><strong>Phase 2 print\u003c/strong> will be one <code>@media print\u003c/code> block in the same stylesheet. Nothing about this setup gets in its way.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "folders",
+      "title": "7. Folder structure",
+      "plan": "<pre>web-react/\n├── index.html\n├── vite.config.ts\n├── biome.json\n├── package.json\n└── src/\n    ├── main.tsx                 boots React, Query and the router\n    ├── styles.css               Tailwind import + the @theme values\n    ├── routes/\n    │   ├── __root.tsx\n    │   ├── index.tsx            /            the song list screen\n    │   ├── songs.$slug.tsx      /songs/xxx   the song screen\n    │   └── $.tsx                            not found\n    ├── rpc/                     COPIED IN BY HAND, never edited\n    │   └── client.gen.ts\n    ├── api/\n    │   ├── client.ts            one configured client instance\n    │   └── queries.ts           useSongList, useSong\n    ├── song-list/               everything the / screen needs\n    │   ├── SongRow.tsx\n    │   ├── SearchBox.tsx\n    │   └── filterSongs.ts       plain function, easy to test\n    ├── song/                    everything that draws a song\n    │   ├── SongBody.tsx\n    │   ├── SongSection.tsx\n    │   ├── SongLine.tsx\n    │   ├── ChordPart.tsx\n    │   ├── StrumGrid.tsx\n    │   └── SongMeta.tsx\n    ├── scroll/                  everything about auto-scroll\n    │   ├── atoms.ts             the two Jotai atoms\n    │   ├── useAutoScroll.ts     the scroll engine\n    │   ├── useWakeLock.ts       keeping the screen awake\n    │   └── ScrollBar.tsx        the floating control bar\n    └── ui/\n        ├── Button.tsx\n        ├── Skeleton.tsx\n        └── ErrorState.tsx\u003c/pre><p><strong>Routes hold no logic.\u003c/strong> A file in <code>routes/\u003c/code> fetches, handles loading and not-found, and arranges the pieces. Everything else lives in a feature folder. That keeps the router swappable, which matters because the SvelteKit app uses a different one.\u003c/p><p><strong>Grouped by feature, not by type.\u003c/strong> There is no top-level <code>components/\u003c/code>, <code>hooks/\u003c/code> or <code>state/\u003c/code> folder. A feature folder holds <em>everything\u003c/em> that feature needs — its components, its hooks, its state, its plain functions. So <code>scroll/\u003c/code> holds the control bar, the scroll engine, and the two atoms, together.\u003c/p><p><strong>Why this scales better than grouping by type,\u003c/strong> which is the real question:\u003c/p><ul><li>By type, one change touches many folders. \"Make the speed slider stepped\" means opening <code>components/\u003c/code>, <code>hooks/\u003c/code> and <code>state/\u003c/code>. By feature, it is one folder.\u003c/li><li>By type, folders grow forever. <code>components/\u003c/code> with 200 files in it is a folder that tells you nothing. Feature folders grow in number, not in size, and the number is the shape of the app.\u003c/li><li>By feature, deleting a feature is deleting a folder. By type, it is a hunt.\u003c/li>\u003c/ul><p><strong>What changes when the app gets big:\u003c/strong> the folders move under a <code>features/\u003c/code> parent to keep <code>src/\u003c/code> readable, and a feature that grows past about ten files splits into sub-folders inside itself. What does not change is the rule. This is the pattern large React apps end up at; by-type is the one they grow out of.\u003c/p><p><strong>Only <code>ui/\u003c/code> is grouped by type\u003c/strong>, because a button belongs to no feature.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "As I said in another section, I'm not sure if we really need to use the wake lock or we can achieve the similar functionality with a little trick, so based on your answer for the other section, this section may need to be updated as well.\n\nAlso I'm trying to understand the advantage of grouping by feature and not by type. I mean, you said that the reason is that the application has exactly three interesting areas. Okay, but this is just the MEP. The application will get bigger and bigger and bigger and there will be other pages. There will be many features. Then how are we planning to handle it? Do you think that grouping by feature could halt also in the long run? Because I didn't do it before. And also my other question is that we do have a scroll folder and it seems like everything related to the scrolling leaves there including the UI element, which is the scrollbar.tsx. But the corresponding states, which is the scroll speed and if the scrolling is ongoing or not, those two states, which are the two jotai atoms, they live in the state folder. So I don't know where we have the division in terms of filtering by or grouping by feature. I'm not sure if it's the right way to go. Maybe it is. I'm not having an opinion towards or against it. I'm just trying to question.\n\nAlso, what's up with the library folder? What's the meaning of library here? Do you take or perceive library as a screen, which is the main page, or which is the song's page? Basically, the page that is represented and rendered by index.tsx, so the songlist screen. Or it means something else. Don't you think it is confusing to name the folders just randomly, without even any convention to tie it to a dedicated route?"
+        },
+        {
+          "author": "claude",
+          "text": "You found two real inconsistencies. Both fixed. Then the bigger question.\n\n=== The atoms in the wrong folder — you are right ===\n\nThere is no defence for it. I said \"group by feature\", then made a state/ folder, which is grouping by type. It was habit, not a decision. The atoms now live in scroll/atoms.ts, next to the hook that reads them and the bar that writes them, and the state/ folder is gone.\n\nThis is worth stating as a rule, because it is the whole point: a feature folder holds EVERYTHING that feature needs — components, hooks, state, plain functions. Not just its components.\n\n=== \"library\" — you are right again ===\n\nIt meant \"the song library\", as in the collection of songs. That is jargon I brought with me, and it does not appear anywhere else in the app or in the requirements. Renamed to song-list/, which is what the screen is called everywhere else.\n\nOn tying folders to routes: mostly yes, and now it reads that way — song-list/ is the / screen, song/ is the /songs/xxx screen. But I would not make it a hard rule, because scroll/ is a real feature that belongs to no route on its own. It is used by the song screen, but the scroll engine, its state and its control bar clearly belong together, and burying them inside song/ would hide the most delicate code in the app. So: name folders after what they are, and let most of them line up with routes without forcing it.\n\n=== Does grouping by feature hold when the app gets big? ===\n\nYes — and it is actually the by-TYPE layout that breaks down first. That is worth explaining properly, because my original reason (\"this app has three areas\") was a weak argument and you were right to push on it.\n\nWhat goes wrong with components/ hooks/ utils/ as an app grows:\n\n- One change touches many folders. \"Make the speed slider stepped\" = open components/, hooks/ and state/. Every single time.\n- The folders only ever grow. components/ with 200 files is a folder that tells you nothing about the app.\n- Deleting a feature becomes a hunt through five folders for the pieces that belonged to it.\n- Nothing stops one feature reaching into another's internals, because everything is a sibling.\n\nWith feature folders, the app grows by adding folders, not by growing them, and the list of folders IS the list of things the app does.\n\nWhat actually changes at scale, and I put this in the text so it is not a surprise later: the feature folders move under a features/ parent so src/ stays readable, and any feature past roughly ten files splits into sub-folders inside itself. The rule does not change, only the depth.\n\nSo it is not a small-app choice that we grow out of. It is the other way round.\n\n=== Wake lock ===\n\nSee my long answer in the General thread. Short version: an event you fire yourself cannot work, and Wake Lock shows no permission popup — that part was a misunderstanding. If you still want it gone, useWakeLock.ts drops out of this tree and nothing else changes."
+        }
+      ]
+    },
+    {
+      "id": "song-render",
+      "title": "8. The components that draw a song",
+      "plan": "<p>This is the core of the app, so it gets its own section. The backend hands us sections, then lines, then parts, and the components follow that shape exactly — one component per level, each small enough to read in one go.\u003c/p><pre>songs.$slug.tsx           the route: fetch, handle loading/404\n└── SongMeta              title, artist, the grey info line\n└── StrumGrid             one grid per pattern, or nothing\n└── SongBody              the whole song\n    └── SongSection       one part of the song ([Verse 1] or no name)\n        └── SongLine      one line, and the (x2) note at its end\n            └── ChordPart chord on top, its own text underneath\n└── ScrollBar             floating at the bottom\u003c/pre><p><strong><code>ChordPart\u003c/code> is where the whole app lives or dies.\u003c/strong> It draws one <code>{ chord, text }\u003c/code> pair as a stacked inline block: the block flows and wraps like a word, the chord sits over the first letter of its own text, and nothing is ever nudged.\u003c/p><pre>&lt;span class=\"part\"&gt;\n  &lt;span class=\"chord\"&gt;Am&lt;/span&gt;      &lt;- left out when there is no chord\n  &lt;span class=\"text\"&gt;Bones, sinking l&lt;/span&gt;   &lt;- left out when there is no text\n&lt;/span&gt;\u003c/pre><p><strong>Each half is left out when its field is empty.\u003c/strong> That one rule inside <code>ChordPart\u003c/code> covers most of the awkward cases by itself, without anyone else having to know about them.\u003c/p><h3><code>SongLine\u003c/code> — what it actually does\u003c/h3><p>It does not pick between three different markups. It renders <strong>one\u003c/strong> markup and picks the right CSS class:\u003c/p><pre>const hasChords = parts.some(p =&gt; p.chord);\n\n&lt;div class={cn(\"line\", !hasChords &amp;&amp; \"line--no-chords\", chordsOnly &amp;&amp; \"line--chords-only\")}&gt;\n  {parts.map(p =&gt; &lt;ChordPart ... /&gt;)}\n  {annotation &amp;&amp; &lt;span class=\"annotation\"&gt;{annotation}&lt;/span&gt;}\n&lt;/div&gt;\u003c/pre><p>So its whole job is: work out whether this line has any chords at all, put the matching class on the wrapper, render the parts, and put the annotation at the end.\u003c/p><table><thead><tr><th>Kind of line\u003c/th><th>Where it is decided\u003c/th><th>What is different\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>Normal chords over lyrics\u003c/td><td>—\u003c/td><td>Nothing. This is the default.\u003c/td>\u003c/tr><tr><td>Lyric with no chord above it\u003c/td><td><code>SongLine\u003c/code> works it out: no part has a chord\u003c/td><td>A class that removes the space the chord row would take, so the line sits tight under the one before.\u003c/td>\u003c/tr><tr><td>Chords only, no lyric\u003c/td><td>The backend says so — <code>chordsOnly\u003c/code>\u003c/td><td>A class that spaces the chords out. The parts have no <code>text\u003c/code>, so <code>ChordPart\u003c/code> already leaves the text row out.\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p><strong>So there is no <code>LyricOnlyLine\u003c/code> or <code>ChordsOnlyLine\u003c/code> component,\u003c/strong> and there does not need to be. They would be three components with the same markup and different class names, each used in one place. The difference between these lines is spacing, and spacing is what CSS is for.\u003c/p><p><strong>The components are pure.\u003c/strong> They take data and return markup — no fetching, no state, no scroll knowledge. That makes them the easy part to unit test, and it is why they can be copied almost line for line into Svelte later.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "what is the responsibility of SongLine component apart from rendering ChordPart components? Is it somewhat constructing the overall evaluation of all the ChordPart components for that line and then conditionally renders different markup, for example;\n1) `chordsOnly`, so it has different visual\n2) `lyricsOnly`\n3) regular chord parts\n\nSo it needs to compose from the data passed to all ChordPart components to make the judgement?? and lyricsOnly or chordsOnly ones, they dont have their separate UI component, they will just live inlined in `SongLine` component?"
+        },
+        {
+          "author": "claude",
+          "text": "You read it right, and asking made me realise the design was more complicated than it needs to be. So the answer is \"yes, but less than you think\".\n\nWhat you guessed: SongLine looks at all its parts, decides which of three kinds of line this is, and renders three different markups. That is what my text implied.\n\nWhat it should actually be: ONE markup, three CSS classes.\n\nHere is why the three markups collapse into one. ChordPart already leaves out the chord half when there is no chord, and leaves out the text half when there is no text. So:\n\n- a lyric-only line is just parts that all have empty chords — ChordPart handles each one, no branch needed\n- a chords-only line is just parts that all have empty text — same\n\nSo the parts render themselves correctly in every case, with no help. The only thing that is genuinely different between the three kinds of line is SPACING: a lyric with no chord above it should sit tight under the line before, instead of leaving an empty gap where a chord row would be.\n\nSpacing is a class, not a component. So SongLine's real job is four small things:\n\n  1. work out hasChords = parts.some(p => p.chord)\n  2. put the right class on the wrapper (line--no-chords, line--chords-only)\n  3. render the parts\n  4. render the annotation at the end\n\nOn your last question — no separate components, and not because I am inlining markup to save files. It is that there would be nothing to put in them. LyricOnlyLine and ChordsOnlyLine would have identical markup to SongLine and differ only by a class name, each used in exactly one place. That is indirection with no payoff.\n\nOne detail worth naming: chordsOnly comes from the BACKEND (it is a field on the line), while lyric-only is worked out here from the parts. Two different sources for two similar-looking things. I put that in the table so nobody later goes looking for a lyricsOnly field that does not exist."
+        }
+      ]
+    },
+    {
+      "id": "scroll-engine",
+      "title": "9. The auto-scroll engine",
+      "plan": "<p>All the scroll behaviour lives in one hook, <code>useAutoScroll\u003c/code>, not spread across components. It is the most stateful thing in the app and the easiest to get subtly wrong, so it gets one home.\u003c/p><p><strong>How it moves.\u003c/strong> A <code>requestAnimationFrame\u003c/code> loop. Each frame it works out how far to move from the time since the last frame and the speed:\u003c/p><pre>const PIXELS_PER_SECOND_AT_100 = 20;   // the one named constant\n\npixels = (speedPercent / 100) * PIXELS_PER_SECOND_AT_100 * secondsSinceLastFrame;\nwindow.scrollBy(0, pixels);\u003c/pre><p>Using elapsed time rather than a fixed step per frame matters: it keeps the speed the same on a 60Hz and a 120Hz screen, and it does not speed up or slow down when the browser is busy. Fractional pixels are fine — the browser keeps the remainder.\u003c/p><p><strong>What the hook owns:\u003c/strong>\u003c/p><ul><li>The frame loop, started and stopped by <code>isScrollingAtom\u003c/code>.\u003c/li><li><strong>Where it starts:\u003c/strong> on play, if the page has not been scrolled yet, or if we are at the bottom, jump so the first line of the song sits under the top edge. Otherwise carry on from here. It finds that position from a ref on <code>SongBody\u003c/code>.\u003c/li><li><strong>Stopping at the bottom,\u003c/strong> and flipping the button back to play.\u003c/li><li><strong>A hand scroll stops it.\u003c/strong> The trick is that our own <code>scrollBy\u003c/code> also fires a scroll event, so we cannot just listen for scroll events. The hook records the position it expects after each frame; if the real position differs by more than a pixel or two, a human did it, so it pauses.\u003c/li><li><strong>The spacebar,\u003c/strong> on a window key listener: toggle play, and cancel the browser's default page-down. Ignored when the search box has focus.\u003c/li>\u003c/ul><p><strong>The wake lock is a separate hook\u003c/strong>, <code>useWakeLock\u003c/code>, because it is a different concern with its own failure rules: ask when scrolling starts, release when it stops, do nothing at all if the browser refuses, and ask again when the tab becomes visible if the scroll is still running.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "maybe we completely delete wake lock"
+        },
+        {
+          "author": "claude",
+          "text": "The long answer is in the General thread, but the short version, because your reason for wanting it gone turned out not to be real:\n\n**Wake Lock does not ask for permission.** No popup, nothing for the user to accept or refuse. The browser grants it as long as the page is visible, and takes it back when you switch tab. That is the whole behaviour.\n\nAnd the alternative you suggested cannot work. The system decides you are idle from real hardware input — an actual key press, actual mouse movement. A page cannot make those. If we fire a fake mouse event, it travels through our own JavaScript and never reaches the operating system, which is a security wall, not a missing feature.\n\nSo the real choice is: the built-in API (about 15 lines, no popup), an old hack that loops an invisible video, or nothing and the screen dims mid-song.\n\nI suggest keeping it, and the yellow box keeps it. If you still want it gone, say so and I will cut useWakeLock.ts from §7 and the paragraph from here — the scroll engine does not depend on it in any way."
+        }
+      ]
+    },
+    {
+      "id": "testing",
+      "title": "10. Tests and tooling",
+      "plan": "<p>Enough tests to catch the things that would actually break, and no more.\u003c/p><p><strong>Vitest + Testing Library\u003c/strong> for the parts where being wrong is silent:\u003c/p><ul><li><code>filterSongs\u003c/code> — a plain function, so plain tests. Strict letter matching, empty query returns all 28, no match returns none.\u003c/li><li><code>SongLine\u003c/code> and <code>ChordPart\u003c/code> — the five awkward cases from §7 of the requirements, one test each. This is the app's real logic, and a mistake here looks like a slightly odd song rather than an error, so a human might never notice.\u003c/li><li><code>useAutoScroll\u003c/code> — the start-position rules, and that a hand scroll pauses it. Fake timers, fake scroll position.\u003c/li>\u003c/ul><p><strong>Playwright\u003c/strong> for one end-to-end run, not a suite: open the app, type in the search box, check the address gained <code>?q=\u003c/code>, open a song, press space, check the page moved.\u003c/p><p><strong>Biome\u003c/strong> for lint and format, one <code>biome.json\u003c/code>, run on the whole app.\u003c/p><p><strong>Not tested on purpose:\u003c/strong> the generated rpc client (not our code), Tailwind classes (a screenshot test would break on every design tweak), and TanStack Query itself.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "svelte-parity",
+      "title": "11. What the SvelteKit app must copy",
+      "plan": "<p>The whole point of building it twice is that the comparison is fair. So the SvelteKit app is not a fresh design — it follows every decision here that is not React-specific.\u003c/p><table><thead><tr><th>Must be identical\u003c/th><th>May differ\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>The requirements document, all of it\u003c/td><td>Routing library (SvelteKit has its own)\u003c/td>\u003c/tr><tr><td>The folder grouping: by feature, same names\u003c/td><td>How state is held (Svelte runes instead of Jotai)\u003c/td>\u003c/tr><tr><td>The component split: Body / Section / Line / Part\u003c/td><td>Component file syntax, obviously\u003c/td>\u003c/tr><tr><td>The 20 pixels-per-second constant\u003c/td><td> \u003c/td>\u003c/tr><tr><td>Tailwind, and the same <code>@theme\u003c/code> values\u003c/td><td> \u003c/td>\u003c/tr><tr><td>The generated webrpc client\u003c/td><td> \u003c/td>\u003c/tr><tr><td>What is tested, and the test cases\u003c/td><td>Test runner setup details\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p><strong>Two things to settle before that app starts:\u003c/strong> SvelteKit runs with <code>adapter-static\u003c/code> and <code>ssr = false\u003c/code>, so it is a browser-only app like the React one — otherwise we would be comparing a server-rendered app against a client-rendered one and learning nothing. And TanStack Query has a Svelte version, so §4 carries over almost unchanged.\u003c/p><p>Nothing here needs deciding today. It is written down so the React choices are made with the second app in mind, instead of being discovered as problems later.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "state-map",
+      "title": "12. Who owns which piece of state",
+      "plan": "<p>Every piece of state in the app, in one table. The rule this table exists to protect: <strong>each piece of state has exactly one owner, and is never copied anywhere else.\u003c/strong> If two rows ever claim to own the same thing, that is the bug.\u003c/p><table><thead><tr><th>State\u003c/th><th>Where it lives\u003c/th><th>Who writes it\u003c/th><th>Who reads it\u003c/th>\u003c/tr>\u003c/thead><tbody><tr><td>The 28 songs\u003c/td><td>TanStack Query cache\u003c/td><td><code>useSongList\u003c/code>, once\u003c/td><td>the song-list screen\u003c/td>\u003c/tr><tr><td>One full song\u003c/td><td>TanStack Query cache\u003c/td><td><code>useSong(slug)\u003c/code>\u003c/td><td>the song screen\u003c/td>\u003c/tr><tr><td>Search text\u003c/td><td>the address, <code>?q=\u003c/code>\u003c/td><td><code>SearchBox\u003c/code>\u003c/td><td><code>filterSongs\u003c/code>, <code>SearchBox\u003c/code>\u003c/td>\u003c/tr><tr><td>The filtered list\u003c/td><td><strong>nowhere\u003c/strong> — worked out from the two rows above\u003c/td><td>—\u003c/td><td>the song-list screen\u003c/td>\u003c/tr><tr><td>Scroll speed %\u003c/td><td>Jotai + localStorage\u003c/td><td><code>ScrollBar\u003c/code>\u003c/td><td><code>ScrollBar\u003c/code>, <code>useAutoScroll\u003c/code>\u003c/td>\u003c/tr><tr><td>Is auto-scrolling\u003c/td><td>Jotai, memory only\u003c/td><td><code>ScrollBar\u003c/code>, the spacebar, <code>useAutoScroll\u003c/code> when it hits the bottom\u003c/td><td><code>ScrollBar\u003c/code>, <code>useAutoScroll\u003c/code>, <code>useWakeLock\u003c/code>\u003c/td>\u003c/tr><tr><td>Scroll position\u003c/td><td><strong>the browser\u003c/strong>\u003c/td><td>the user, and <code>useAutoScroll\u003c/code>\u003c/td><td><code>useAutoScroll\u003c/code>\u003c/td>\u003c/tr><tr><td>Where the song starts on the page\u003c/td><td>a ref on <code>SongBody\u003c/code>\u003c/td><td>React, when it renders\u003c/td><td><code>useAutoScroll\u003c/code>, to know where to jump\u003c/td>\u003c/tr><tr><td>The position we expect after each frame\u003c/td><td>a ref in <code>useAutoScroll\u003c/code>\u003c/td><td><code>useAutoScroll\u003c/code>\u003c/td><td><code>useAutoScroll\u003c/code>, to spot a hand scroll\u003c/td>\u003c/tr><tr><td>The wake lock handle\u003c/td><td>a ref in <code>useWakeLock\u003c/code>\u003c/td><td><code>useWakeLock\u003c/code>\u003c/td><td><code>useWakeLock\u003c/code>\u003c/td>\u003c/tr>\u003c/tbody>\u003c/table><p><strong>Four kinds of state, and the reason each one is where it is:\u003c/strong>\u003c/p><ul><li><strong>Server state\u003c/strong> (the songs) is in Query, because it comes from somewhere else and has loading and error states.\u003c/li><li><strong>State in the address\u003c/strong> (the search) is there because it should survive Back and be shareable as a link (§3).\u003c/li><li><strong>Client state\u003c/strong> (speed, is-running) is in Jotai, because two far-apart places need it and it belongs to no server.\u003c/li><li><strong>Refs\u003c/strong> hold things that change every frame or are not for drawing. Putting the expected scroll position in state would re-render the whole song sixty times a second, for nothing.\u003c/li>\u003c/ul><p><strong>The two rows worth noticing are the ones that own nothing.\u003c/strong> The filtered list is not stored — it is worked out from the songs and the <code>q\u003c/code> in the address. And the scroll position is not stored either; the browser already has it, and keeping a copy in state would mean two versions of one truth that must be kept in step. Those two are the places this app would most easily go wrong.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATA = JSON.parse(document.getElementById("thread-data").textContent);
+  var FILE_NAME = decodeURIComponent(location.pathname.split("/").pop() || "plan.html");
+  var DRAFT_KEY = "plan-thread-drafts:" + FILE_NAME;
+  var GENERAL_ID = "__general";   // draft key for the un-sectioned thread
+  var HANDLE_KEY = "handle:" + FILE_NAME;
+
+  var host = document.getElementById("sections");
+  var tocHost = document.getElementById("toc");
+  var statusEl = document.getElementById("status");
+  var connectBtn = document.getElementById("connect");
+  var saveBtn = document.getElementById("save");
+  var fileHandle = null;
+  var fileHandleName = "";
+  var pendingChanges = false;   // an Agree / Reopen click waiting to be saved
+
+  var nameSlot = document.getElementById("file-name");
+  if (nameSlot) { nameSlot.textContent = FILE_NAME; }
+
+  /* ---------- drafts: unsaved typing survives a reload ---------- */
+
+  function loadDrafts() {
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function saveDraft(id, text) {
+    var drafts = loadDrafts();
+    if (text) { drafts[id] = text; } else { delete drafts[id]; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+  }
+
+  /* ---------- render ---------- */
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function renderEntry(entry) {
+    var wrap = el("div", "entry " + entry.author);
+    wrap.appendChild(el("span", "who", entry.author === "umit" ? "Umit" : "Claude"));
+    wrap.appendChild(el("p", "body", entry.text));
+    return wrap;
+  }
+
+  // A proposal is the exact final wording Claude is offering, shown before anything
+  // closes. Nothing is settled until the owner presses the button.
+  function renderProposal(section) {
+    var box = el("div", "proposal");
+    box.appendChild(el("span", "lbl", "Final text — you have not agreed yet"));
+
+    if (section.proposedPlan) {
+      var body = document.createElement("div");
+      body.innerHTML = section.proposedPlan;
+      box.appendChild(body);
+      box.appendChild(el("p", "ask", "If you agree, this replaces the plan text above and becomes the final text for the whole section."));
+    } else {
+      box.appendChild(el("p", null, "Nothing new to show — the plan text above is already the final text."));
+      box.appendChild(el("p", "ask", "If you agree, the whole section is settled as written above, including any part we never talked about."));
+    }
+
+    var actions = el("div", "actions");
+
+    var agree = el("button", "agree", "Agree — close this section");
+    agree.addEventListener("click", function () { acceptProposal(section); });
+    actions.appendChild(agree);
+
+    box.appendChild(actions);
+    box.appendChild(el("p", "ask", "Do not agree? Just write a comment instead and the section stays open. Nothing is written to the file until you click “Save my comments”."));
+    return box;
+  }
+
+  // Accepting is the owner's act alone — this is the only path to "resolved".
+  function acceptProposal(section) {
+    section.status = "resolved";
+    if (section.proposedPlan) {
+      section.plan = section.proposedPlan;
+      delete section.proposedPlan;
+    }
+    delete section.agreed;
+    delete section.wasResolved;
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function render() {
+    var drafts = loadDrafts();
+    host.innerHTML = "";
+
+    DATA.sections.forEach(function (section) {
+      var card = el("div", "section");
+      card.id = "section-" + section.id;
+      card.appendChild(el("h2", null, section.title));
+
+      var resolved = section.status === "resolved";
+      var plan = el("div", "plan" + (resolved ? " agreed" : ""));
+      plan.appendChild(el("span", "lbl", resolved ? "Agreed" : "Plan"));
+      var planBody = document.createElement("div");
+      planBody.innerHTML = section.plan;   // authored by Claude, not user input
+      plan.appendChild(planBody);
+
+      if (resolved) {
+        var reopen = el("button", "reopen", "Reopen");
+        reopen.addEventListener("click", function () { reopenSection(section); });
+        plan.appendChild(reopen);
+      } else if (section.wasResolved) {
+        // Reopened by mistake, or you changed your mind back. The text has not moved
+        // since you agreed to it, so agreeing again is clear — it undoes the reopen.
+        var reAgree = el("button", "reopen", "Agree as-is again");
+        reAgree.addEventListener("click", function () { acceptProposal(section); });
+        plan.appendChild(reAgree);
+      }
+
+      card.appendChild(plan);
+
+      var thread = el("div", "thread " + (section.status || "open"));
+
+      if (resolved) {
+        if (section.entries.length) {
+          var history = el("details", "history");
+          history.appendChild(el("summary", null, "show discussion (" + section.entries.length + ")"));
+          section.entries.forEach(function (entry) { history.appendChild(renderEntry(entry)); });
+          thread.appendChild(history);
+        }
+      } else {
+        section.entries.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+        if (section.status === "proposed") { thread.appendChild(renderProposal(section)); }
+
+        var compose = el("div", "compose");
+        var box = el("textarea");
+        box.placeholder = "Your comment on this section…";
+        box.value = drafts[section.id] || "";
+        box.addEventListener("input", function () {
+          saveDraft(section.id, box.value);
+          markUnsaved();
+        });
+        compose.appendChild(box);
+
+        var row = el("div", "row");
+        row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+        compose.appendChild(row);
+
+        thread.appendChild(compose);
+      }
+
+      card.appendChild(thread);
+      host.appendChild(card);
+    });
+
+    renderGeneral(drafts);
+    renderToc();
+  }
+
+  // Reopening a settled section drops it back to plain discussion rather than back to
+  // a proposal — showing the Agree button again would just invite re-agreeing to the
+  // wording that was rejected. The old text is not restored; the thread holds the history.
+  function reopenSection(section) {
+    section.status = "open";
+    section.wasResolved = true;   // lets you take the reopen back
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function renderToc() {
+    if (!tocHost) { return; }
+    tocHost.innerHTML = "";
+
+    var settled = 0;
+    DATA.sections.forEach(function (section) {
+      if (section.status === "resolved") { settled++; }
+    });
+
+    tocHost.appendChild(el("h3", null, "Sections"));
+    tocHost.appendChild(el("p", "count", settled + " of " + DATA.sections.length + " agreed"));
+
+    DATA.sections.forEach(function (section) {
+      var link = el("a", section.status || "open", section.title);
+      link.href = "#section-" + section.id;
+      tocHost.appendChild(link);
+    });
+
+    var general = el("a", "open", "General");
+    general.href = "#section-" + GENERAL_ID;
+    tocHost.appendChild(general);
+  }
+
+  // A thread that belongs to no section — for things the plan missed, or a point that
+  // touches all of it. It never closes; there is nothing to agree to.
+  function renderGeneral(drafts) {
+    if (!DATA.general) { DATA.general = []; }
+
+    var card = el("div", "section");
+    card.id = "section-" + GENERAL_ID;
+    card.appendChild(el("h2", null, "General"));
+    card.appendChild(el("p", "muted", "Anything that does not fit one section: a topic the plan missed completely, something that touches several sections at once, or a question about the whole thing. This one never closes."));
+
+    var thread = el("div", "thread open");
+    DATA.general.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+    var compose = el("div", "compose");
+    var box = el("textarea");
+    box.placeholder = "Something we have not covered anywhere…";
+    box.value = drafts[GENERAL_ID] || "";
+    box.addEventListener("input", function () {
+      saveDraft(GENERAL_ID, box.value);
+      markUnsaved();
+    });
+    compose.appendChild(box);
+
+    var row = el("div", "row");
+    row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+    compose.appendChild(row);
+
+    thread.appendChild(compose);
+    card.appendChild(thread);
+    host.appendChild(card);
+  }
+
+  function markUnsaved() {
+    statusEl.innerHTML = "<span class='unsaved'>unsaved changes</span>";
+  }
+
+  /* ---------- remember the file handle between reloads ---------- */
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      var request = indexedDB.open("plan-thread", 1);
+      request.onupgradeneeded = function () { request.result.createObjectStore("kv"); };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error); };
+    });
+  }
+
+  function dbGet(key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv").objectStore("kv").get(key);
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function dbSet(key, value) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv", "readwrite").objectStore("kv").put(value, key);
+        req.onsuccess = function () { resolve(); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  /* ---------- connect / save ---------- */
+
+  var supported = typeof window.showOpenFilePicker === "function";
+
+  function setConnected(name) {
+    fileHandleName = name;
+    statusEl.textContent = "connected to " + name;
+    saveBtn.disabled = false;
+    connectBtn.textContent = "Reconnect file";
+  }
+
+  connectBtn.addEventListener("click", function () {
+    if (!supported) {
+      statusEl.textContent = "this browser can't write files — save will download instead";
+      saveBtn.disabled = false;
+      return;
+    }
+    window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: "HTML", accept: { "text/html": [".html"] } }]
+    }).then(function (handles) {
+      fileHandle = handles[0];
+      return dbSet(HANDLE_KEY, fileHandle).then(function () { setConnected(fileHandle.name); });
+    }).catch(function (error) {
+      if (error && error.name !== "AbortError") { statusEl.textContent = "connect failed: " + error.message; }
+    });
+  });
+
+  function collectComments() {
+    var drafts = loadDrafts();
+    var added = 0;
+    DATA.sections.forEach(function (section) {
+      var text = (drafts[section.id] || "").trim();
+      if (text && section.status !== "resolved") {
+        section.entries.push({ author: "umit", text: text });
+        added++;
+      }
+    });
+
+    var general = (drafts[GENERAL_ID] || "").trim();
+    if (general) {
+      if (!DATA.general) { DATA.general = []; }
+      DATA.general.push({ author: "umit", text: general });
+      added++;
+    }
+
+    return added;
+  }
+
+  function buildUpdatedHtml(originalText) {
+    var json = JSON.stringify(DATA, null, 2).split("</").join("\\u003c/");
+    var pattern = /(<script id="thread-data" type="application\/json">)[\s\S]*?(<\/script>)/;
+    if (!pattern.test(originalText)) { throw new Error("could not find the thread-data block"); }
+    return originalText.replace(pattern, function (match, open, close) {
+      return open + "\n" + json + "\n" + close;
+    });
+  }
+
+  function downloadFallback(text) {
+    var blob = new Blob([text], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = FILE_NAME;
+    link.click();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = "downloaded — move it into the repo, replacing the old file";
+  }
+
+  saveBtn.addEventListener("click", function () {
+    var added = collectComments();
+    if (!added && !pendingChanges) {
+      statusEl.textContent = "nothing to save — write a comment, or agree to a proposal";
+      return;
+    }
+
+    statusEl.textContent = "saving…";
+
+    var proceed = fileHandle
+      ? fileHandle.queryPermission({ mode: "readwrite" }).then(function (state) {
+          return state === "granted" ? "granted" : fileHandle.requestPermission({ mode: "readwrite" });
+        })
+      : Promise.resolve("denied");
+
+    proceed.then(function (state) {
+      if (state !== "granted") { throw new Error("no write permission"); }
+      return fileHandle.getFile()
+        .then(function (file) { return file.text(); })
+        .then(function (originalText) { return buildUpdatedHtml(originalText); })
+        .then(function (updated) {
+          return fileHandle.createWritable().then(function (writable) {
+            return writable.write(updated).then(function () { return writable.close(); });
+          });
+        })
+        .then(function () {
+          localStorage.removeItem(DRAFT_KEY);
+          pendingChanges = false;
+          statusEl.textContent = "saved to " + fileHandleName + " — tell Claude to read it";
+          render();
+        });
+    }).catch(function (error) {
+      // Fall back to a download so nothing is ever lost.
+      try {
+        downloadFallback(buildUpdatedHtml(document.documentElement.outerHTML));
+      } catch (inner) {
+        statusEl.textContent = "save failed: " + error.message;
+      }
+    });
+  });
+
+  /* ---------- boot ---------- */
+
+  render();
+
+  if (supported) {
+    dbGet(HANDLE_KEY).then(function (handle) {
+      if (!handle) { return; }
+      fileHandle = handle;
+      return handle.queryPermission({ mode: "readwrite" }).then(function (state) {
+        setConnected(handle.name);
+        if (state !== "granted") { statusEl.textContent = "connected to " + handle.name + " (will ask permission on save)"; }
+      });
+    }).catch(function () { /* first run, nothing stored */ });
+  } else {
+    statusEl.textContent = "this browser can't write files — save will download instead";
+    saveBtn.disabled = false;
+  }
+})();
+</script>

@@ -1,0 +1,600 @@
+<meta charset="utf-8">
+<title>TITLE — Plan</title>
+<style>
+  :root {
+    --page: #f4f4f2;
+    --paper: #ffffff;
+    --text: #202124;
+    --muted: #61656b;
+    --line: #d9dadd;
+    --soft: #f7f7f6;
+    --code: #f1f2f3;
+    --accent: #2f5f8f;
+    --good: #2f7d43;
+    --warn: #9a6b00;
+    --you: #8a4b9c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background: var(--page);
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.55;
+  }
+  html { scroll-behavior: smooth; }
+  /* The sidebar hugs the left edge; the paper stays a readable width and centres
+     itself in whatever space is left, so no gap opens up beside the sidebar. */
+  .layout {
+    width: calc(100% - 32px); margin: 24px auto 80px;
+    display: flex; gap: 24px; align-items: flex-start;
+  }
+  main {
+    flex: 1; min-width: 0; max-width: 1040px;
+    padding: 32px 40px 56px; background: var(--paper); border: 1px solid var(--line);
+  }
+
+  /* ---- sidebar ---- */
+  .toc {
+    position: sticky; top: 24px; align-self: flex-start;
+    width: 215px; flex: none;
+    max-height: calc(100vh - 48px); overflow-y: auto;
+    padding: 14px 12px; background: var(--paper); border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .toc h3 {
+    margin: 0 0 4px; font-size: 11px; font-weight: bold;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  }
+  .toc .count { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+  .toc a {
+    display: block; position: relative;
+    padding: 5px 6px 5px 20px; margin-bottom: 1px;
+    color: var(--text); text-decoration: none; line-height: 1.35;
+  }
+  .toc a:hover { background: var(--soft); }
+  .toc a::before { content: "●"; position: absolute; left: 5px; }
+  .toc a.open::before { color: #c8cacd; }
+  .toc a.proposed::before { color: var(--warn); }
+  .toc a.resolved::before { color: var(--good); }
+  .toc a.resolved { color: var(--muted); }
+  @media (max-width: 1080px) { .toc { display: none; } }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  h2 { margin: 38px 0 10px; padding-top: 8px; border-top: 2px solid var(--text); font-size: 22px; }
+  h3 { margin: 18px 0 6px; font-size: 16px; }
+  p { margin: 8px 0 14px; }
+  ul, ol { margin: 8px 0 14px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .muted { color: var(--muted); }
+  code {
+    font-family: Consolas, Monaco, monospace; font-size: .94em;
+    background: var(--code); padding: 0 3px; border-radius: 2px;
+  }
+  pre {
+    margin: 0 0 14px; padding: 12px; overflow: auto;
+    background: var(--code); border: 1px solid #d0d2d5;
+    font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--soft); }
+
+  /* ---- toolbar ---- */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 24px; padding: 10px 14px;
+    background: #eef1f5; border: 1px solid #c7d4e2;
+  }
+  .bar .status { margin-left: auto; font-size: 13px; color: var(--muted); }
+  button {
+    font-family: inherit; font-size: 13px; font-weight: bold;
+    padding: 7px 13px; cursor: pointer;
+    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 3px;
+  }
+  button.ghost { background: #fff; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .howto { margin: 0 0 26px; padding: 12px 14px; background: #fff9e8; border: 1px solid #ead9a8; }
+  .howto ol { margin: 6px 0 0; }
+
+  /* ---- plan section ---- */
+  .section { margin: 0 0 8px; scroll-margin-top: 16px; }
+  .plan { padding: 12px 14px; background: var(--soft); border-left: 3px solid var(--accent); }
+  .plan .lbl {
+    display: block; margin-bottom: 4px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--accent);
+  }
+  .plan > div > *:first-child { margin-top: 0; }
+  .plan > div > *:last-child { margin-bottom: 0; }
+
+  /* ---- thread ---- */
+  .thread { margin: 12px 0 0; padding: 0 0 0 14px; border-left: 3px solid var(--line); }
+  .thread.resolved { border-left-color: var(--good); }
+  .thread.proposed { border-left-color: var(--warn); }
+  .entry { margin: 0 0 10px; }
+  .entry .who {
+    display: inline-block; margin-bottom: 2px;
+    font-size: 11px; font-weight: bold; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .entry.umit .who { color: var(--you); }
+  .entry.claude .who { color: var(--accent); }
+  .entry .body { margin: 0; padding: 8px 11px; border: 1px solid var(--line); background: #fff; white-space: pre-wrap; }
+  .entry.umit .body { border-left: 3px solid var(--you); }
+  .entry.claude .body { border-left: 3px solid var(--accent); }
+
+  details.history { margin: 0 0 10px; }
+  details.history summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details.history[open] summary { margin-bottom: 10px; }
+  details.history .entry .body { color: var(--muted); text-decoration: line-through; background: #fbfbfa; }
+  details.history .entry .who { text-decoration: line-through; opacity: .7; }
+
+  /* A resolved section has ONE block: the plan text itself, turned green and
+     relabelled. There is no separate summary — a summary would drift. */
+  .plan.agreed { background: #eef7ee; border-left-color: var(--good); }
+  .plan.agreed .lbl { color: var(--good); }
+  .plan .reopen {
+    margin-top: 12px; padding: 3px 10px; font-size: 12px; font-weight: normal;
+    background: #fff; color: var(--muted); border-color: var(--line);
+  }
+  .plan .reopen:hover { color: var(--text); }
+
+  .proposal { margin: 0 0 10px; padding: 10px 12px; background: #fff9e8; border: 1px solid #ead9a8; border-left: 3px solid var(--warn); }
+  .proposal .lbl {
+    display: block; margin-bottom: 3px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--warn);
+  }
+  .proposal .ask { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .proposal .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .proposal button.agree { background: var(--good); border-color: var(--good); }
+  .proposal details { margin-top: 8px; }
+  .proposal details summary { cursor: pointer; font-size: 13px; color: var(--warn); }
+  .proposal details > div { margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--line); }
+
+  .compose { margin: 4px 0 0; }
+  .compose textarea {
+    width: 100%; min-height: 68px; padding: 8px 10px;
+    font-family: inherit; font-size: 14px; line-height: 1.5;
+    border: 1px solid var(--line); background: #fff; resize: vertical;
+  }
+  .compose textarea:focus { outline: 2px solid var(--you); outline-offset: -1px; }
+  .compose .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .compose .hint { font-size: 12px; color: var(--muted); }
+  .unsaved { color: var(--warn); font-weight: bold; }
+</style>
+
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+  <h1>TITLE</h1>
+  <p class="muted">INTRO — one line saying what this plan covers and what decision it is asking for.</p>
+
+  <div class="bar">
+    <button id="connect" class="ghost">Connect this file</button>
+    <button id="save" disabled>Save my comments</button>
+    <span class="status" id="status">not connected</span>
+  </div>
+
+  <div class="howto">
+    <strong>How to use this page</strong>
+    <ol>
+      <li>Click <strong>Connect this file</strong> and pick <code id="file-name">this file</code> in the box that opens. You only do this once per browser session.</li>
+      <li>Write a comment under any section, then click <strong>Save my comments</strong>. Your text is written into this HTML file.</li>
+      <li>Tell Claude you saved. It reads the file, writes an answer into it, and tells you to reload.</li>
+      <li>When we agree, Claude puts the final text in a yellow box. Only you can close a section: press <strong>Agree</strong>, then <strong>Save my comments</strong>. If you do not agree, just write a comment instead.</li>
+    </ol>
+  </div>
+
+  <div id="sections"></div>
+
+</main>
+</div>
+
+<script id="thread-data" type="application/json">
+{
+  "general": [],
+  "sections": [
+    {
+      "id": "SECTION-ID",
+      "title": "1. SECTION TITLE",
+      "plan": "<p>The proposal for this section. HTML is allowed here — lists, tables, <code>code</code>, <pre> blocks.</p>",
+      "status": "open",
+      "entries": []
+    }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATA = JSON.parse(document.getElementById("thread-data").textContent);
+  var FILE_NAME = decodeURIComponent(location.pathname.split("/").pop() || "plan.html");
+  var DRAFT_KEY = "plan-thread-drafts:" + FILE_NAME;
+  var GENERAL_ID = "__general";   // draft key for the un-sectioned thread
+  var HANDLE_KEY = "handle:" + FILE_NAME;
+
+  var host = document.getElementById("sections");
+  var tocHost = document.getElementById("toc");
+  var statusEl = document.getElementById("status");
+  var connectBtn = document.getElementById("connect");
+  var saveBtn = document.getElementById("save");
+  var fileHandle = null;
+  var fileHandleName = "";
+  var pendingChanges = false;   // an Agree / Reopen click waiting to be saved
+
+  var nameSlot = document.getElementById("file-name");
+  if (nameSlot) { nameSlot.textContent = FILE_NAME; }
+
+  /* ---------- drafts: unsaved typing survives a reload ---------- */
+
+  function loadDrafts() {
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function saveDraft(id, text) {
+    var drafts = loadDrafts();
+    if (text) { drafts[id] = text; } else { delete drafts[id]; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+  }
+
+  /* ---------- render ---------- */
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function renderEntry(entry) {
+    var wrap = el("div", "entry " + entry.author);
+    wrap.appendChild(el("span", "who", entry.author === "umit" ? "Umit" : "Claude"));
+    wrap.appendChild(el("p", "body", entry.text));
+    return wrap;
+  }
+
+  // A proposal is a resolution Claude is offering — the exact final wording, shown
+  // before anything closes. Nothing is settled until the owner says so.
+  function renderProposal(section) {
+    var box = el("div", "proposal");
+    box.appendChild(el("span", "lbl", "Final text — you have not agreed yet"));
+
+    if (section.proposedPlan) {
+      var body = document.createElement("div");
+      body.innerHTML = section.proposedPlan;
+      box.appendChild(body);
+      box.appendChild(el("p", "ask", "If you agree, this replaces the plan text above and becomes the final text for the whole section."));
+    } else {
+      box.appendChild(el("p", null, "Nothing new to show — the plan text above is already the final text."));
+      box.appendChild(el("p", "ask", "If you agree, the whole section is settled as written above, including any part we never talked about."));
+    }
+
+    var actions = el("div", "actions");
+
+    var agree = el("button", "agree", "Agree — close this section");
+    agree.addEventListener("click", function () { acceptProposal(section); });
+    actions.appendChild(agree);
+
+    box.appendChild(actions);
+    box.appendChild(el("p", "ask", "Do not agree? Just write a comment instead and the section stays open. Nothing is written to the file until you click “Save my comments”."));
+    return box;
+  }
+
+  // Accepting is the owner's act alone — this is the only path to "resolved".
+  function acceptProposal(section) {
+    section.status = "resolved";
+    if (section.proposedPlan) {
+      section.plan = section.proposedPlan;
+      delete section.proposedPlan;
+    }
+    delete section.agreed;
+    delete section.wasResolved;
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+
+  function render() {
+    var drafts = loadDrafts();
+    host.innerHTML = "";
+
+    DATA.sections.forEach(function (section) {
+      var card = el("div", "section");
+      card.id = "section-" + section.id;
+      card.appendChild(el("h2", null, section.title));
+
+      var resolved = section.status === "resolved";
+      var plan = el("div", "plan" + (resolved ? " agreed" : ""));
+      plan.appendChild(el("span", "lbl", resolved ? "Agreed" : "Plan"));
+      var planBody = document.createElement("div");
+      planBody.innerHTML = section.plan;   // authored by Claude, not user input
+      plan.appendChild(planBody);
+
+      if (resolved) {
+        var reopen = el("button", "reopen", "Reopen");
+        reopen.addEventListener("click", function () { reopenSection(section); });
+        plan.appendChild(reopen);
+      } else if (section.wasResolved) {
+        // Reopened by mistake, or changed your mind back. The text is untouched since
+        // you agreed to it, so agreeing again is unambiguous — it undoes the reopen.
+        var reAgree = el("button", "reopen", "Agree as-is again");
+        reAgree.addEventListener("click", function () { acceptProposal(section); });
+        plan.appendChild(reAgree);
+      }
+
+      card.appendChild(plan);
+
+      var thread = el("div", "thread " + (section.status || "open"));
+
+      if (resolved) {
+        if (section.entries.length) {
+          var history = el("details", "history");
+          history.appendChild(el("summary", null, "show discussion (" + section.entries.length + ")"));
+          section.entries.forEach(function (entry) { history.appendChild(renderEntry(entry)); });
+          thread.appendChild(history);
+        }
+      } else {
+        section.entries.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+        if (section.status === "proposed") { thread.appendChild(renderProposal(section)); }
+
+        var compose = el("div", "compose");
+        var box = el("textarea");
+        box.placeholder = "Your comment on this section…";
+        box.value = drafts[section.id] || "";
+        box.addEventListener("input", function () {
+          saveDraft(section.id, box.value);
+          markUnsaved();
+        });
+        compose.appendChild(box);
+
+        var row = el("div", "row");
+        row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+        compose.appendChild(row);
+
+        thread.appendChild(compose);
+      }
+
+      card.appendChild(thread);
+      host.appendChild(card);
+    });
+
+    renderGeneral(drafts);
+    renderToc();
+  }
+
+  // Reopening a settled section drops it back to plain discussion rather than back to
+  // a proposal — showing the Agree button again would just invite re-agreeing to the
+  // wording that was rejected. The old text is not restored; the thread holds the history.
+  function reopenSection(section) {
+    section.status = "open";
+    section.wasResolved = true;   // lets you take the reopen back
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function renderToc() {
+    if (!tocHost) { return; }
+    tocHost.innerHTML = "";
+
+    var settled = 0;
+    DATA.sections.forEach(function (section) {
+      if (section.status === "resolved") { settled++; }
+    });
+
+    tocHost.appendChild(el("h3", null, "Sections"));
+    tocHost.appendChild(el("p", "count", settled + " of " + DATA.sections.length + " agreed"));
+
+    DATA.sections.forEach(function (section) {
+      var link = el("a", section.status || "open", section.title);
+      link.href = "#section-" + section.id;
+      tocHost.appendChild(link);
+    });
+
+    var general = el("a", "open", "General");
+    general.href = "#section-" + GENERAL_ID;
+    tocHost.appendChild(general);
+  }
+
+  // A thread belonging to no section — for what the plan failed to cover, or a remark
+  // that cuts across all of it. It never resolves; there is nothing to agree to.
+  function renderGeneral(drafts) {
+    if (!DATA.general) { DATA.general = []; }
+
+    var card = el("div", "section");
+    card.id = "section-" + GENERAL_ID;
+    card.appendChild(el("h2", null, "General"));
+    card.appendChild(el("p", "muted", "Anything that does not fit one section: a topic the plan missed completely, something that touches several sections at once, or a question about the whole thing. This one never closes."));
+
+    var thread = el("div", "thread open");
+    DATA.general.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+    var compose = el("div", "compose");
+    var box = el("textarea");
+    box.placeholder = "Something we haven't covered anywhere…";
+    box.value = drafts[GENERAL_ID] || "";
+    box.addEventListener("input", function () {
+      saveDraft(GENERAL_ID, box.value);
+      markUnsaved();
+    });
+    compose.appendChild(box);
+
+    var row = el("div", "row");
+    row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+    compose.appendChild(row);
+
+    thread.appendChild(compose);
+    card.appendChild(thread);
+    host.appendChild(card);
+  }
+
+  function markUnsaved() {
+    statusEl.innerHTML = "<span class='unsaved'>unsaved changes</span>";
+  }
+
+  /* ---------- remember the file handle between reloads ---------- */
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      var request = indexedDB.open("plan-thread", 1);
+      request.onupgradeneeded = function () { request.result.createObjectStore("kv"); };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error); };
+    });
+  }
+
+  function dbGet(key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv").objectStore("kv").get(key);
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function dbSet(key, value) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv", "readwrite").objectStore("kv").put(value, key);
+        req.onsuccess = function () { resolve(); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  /* ---------- connect / save ---------- */
+
+  var supported = typeof window.showOpenFilePicker === "function";
+
+  function setConnected(name) {
+    fileHandleName = name;
+    statusEl.textContent = "connected to " + name;
+    saveBtn.disabled = false;
+    connectBtn.textContent = "Reconnect file";
+  }
+
+  connectBtn.addEventListener("click", function () {
+    if (!supported) {
+      statusEl.textContent = "this browser can't write files — save will download instead";
+      saveBtn.disabled = false;
+      return;
+    }
+    window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: "HTML", accept: { "text/html": [".html"] } }]
+    }).then(function (handles) {
+      fileHandle = handles[0];
+      return dbSet(HANDLE_KEY, fileHandle).then(function () { setConnected(fileHandle.name); });
+    }).catch(function (error) {
+      if (error && error.name !== "AbortError") { statusEl.textContent = "connect failed: " + error.message; }
+    });
+  });
+
+  function collectComments() {
+    var drafts = loadDrafts();
+    var added = 0;
+    DATA.sections.forEach(function (section) {
+      var text = (drafts[section.id] || "").trim();
+      if (text && section.status !== "resolved") {
+        section.entries.push({ author: "umit", text: text });
+        added++;
+      }
+    });
+
+    var general = (drafts[GENERAL_ID] || "").trim();
+    if (general) {
+      if (!DATA.general) { DATA.general = []; }
+      DATA.general.push({ author: "umit", text: general });
+      added++;
+    }
+
+    return added;
+  }
+
+  function buildUpdatedHtml(originalText) {
+    var json = JSON.stringify(DATA, null, 2).split("</").join("\\u003c/");
+    var pattern = /(<script id="thread-data" type="application\/json">)[\s\S]*?(<\/script>)/;
+    if (!pattern.test(originalText)) { throw new Error("could not find the thread-data block"); }
+    return originalText.replace(pattern, function (match, open, close) {
+      return open + "\n" + json + "\n" + close;
+    });
+  }
+
+  function downloadFallback(text) {
+    var blob = new Blob([text], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = FILE_NAME;
+    link.click();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = "downloaded — move it into the repo, replacing the old file";
+  }
+
+  saveBtn.addEventListener("click", function () {
+    var added = collectComments();
+    if (!added && !pendingChanges) {
+      statusEl.textContent = "nothing to save — write a comment, or agree to a proposal";
+      return;
+    }
+
+    statusEl.textContent = "saving…";
+
+    var proceed = fileHandle
+      ? fileHandle.queryPermission({ mode: "readwrite" }).then(function (state) {
+          return state === "granted" ? "granted" : fileHandle.requestPermission({ mode: "readwrite" });
+        })
+      : Promise.resolve("denied");
+
+    proceed.then(function (state) {
+      if (state !== "granted") { throw new Error("no write permission"); }
+      return fileHandle.getFile()
+        .then(function (file) { return file.text(); })
+        .then(function (originalText) { return buildUpdatedHtml(originalText); })
+        .then(function (updated) {
+          return fileHandle.createWritable().then(function (writable) {
+            return writable.write(updated).then(function () { return writable.close(); });
+          });
+        })
+        .then(function () {
+          localStorage.removeItem(DRAFT_KEY);
+          pendingChanges = false;
+          statusEl.textContent = "saved to " + fileHandleName + " — tell Claude to read it";
+          render();
+        });
+    }).catch(function (error) {
+      // Fall back to a download so nothing is ever lost.
+      try {
+        downloadFallback(buildUpdatedHtml(document.documentElement.outerHTML));
+      } catch (inner) {
+        statusEl.textContent = "save failed: " + error.message;
+      }
+    });
+  });
+
+  /* ---------- boot ---------- */
+
+  render();
+
+  if (supported) {
+    dbGet(HANDLE_KEY).then(function (handle) {
+      if (!handle) { return; }
+      fileHandle = handle;
+      return handle.queryPermission({ mode: "readwrite" }).then(function (state) {
+        setConnected(handle.name);
+        if (state !== "granted") { statusEl.textContent = "connected to " + handle.name + " (will ask permission on save)"; }
+      });
+    }).catch(function () { /* first run, nothing stored */ });
+  } else {
+    statusEl.textContent = "this browser can't write files — save will download instead";
+    saveBtn.disabled = false;
+  }
+})();
+</script>

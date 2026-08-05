@@ -21,6 +21,15 @@ A music app that shows song lyrics with chords above the words, auto-scrolls at 
 - Chord shapes: a backend base dictionary + per-file overrides (file wins → else base → else no diagram). Assumption A1 confirmed 2026-07-20.
 - **No separate validator.** The parser is the only guardrail: it returns an error on malformed input, and the store logs and skips those files.
 - Internal `Song` struct is never serialized directly — the API maps it to a separate response DTO.
+## How to write (applies to everything)
+
+English is not the owner's first language. **Write in simple, everyday, informal English** — in chat, in plan pages, in explanation artifacts, in docs, in comments. This is not a "nice to have": hard words slow the owner down and hide the message, so a clever sentence they have to decode is worse than a plain one.
+
+- **Short words, short sentences, active voice.** If a word would send someone to a dictionary, swap it.
+- **No fancy or abstract phrasing.** Real examples that were too hard: _knock-on effects_ (→ side effects), _folded in_ (→ added), _undercuts_ (→ makes it less true), _load-bearing_ (→ the important part), _pre-empt_ (→ answer it before they ask), _the sleeper feature_ (→ the part people miss).
+- **Sounding amateur is fine.** Being correct and clear is what matters, not sounding smart.
+- In chat, also keep it to **3–4 sentences** unless asked for more.
+
 ## Decision protocol
 
 Whenever an implementation choice affects what the user sees or hears — chord alignment, what gets dropped, how something is rendered, any behaviour the owner could reasonably disagree with — **stop and ask before implementing**. Do not silently pick a side. State the options, give a recommendation, and wait for confirmation. The owner cannot push back on a decision they were never told was made.
@@ -59,6 +68,8 @@ Whenever an implementation choice affects what the user sees or hears — chord 
 The owner is a **frontend developer** who is **new to Go and to backend concepts in general**, and reviews changes best in a **visual, browser-readable HTML page**. So: whenever you complete an implementation that is **more than trivial**, also create a self-contained HTML artifact that explains and navigates it.
 
 These artifacts are **one-off and throwaway**: the owner reads one to understand a change, then deletes it. So nothing may depend on a specific past artifact persisting — **this template below is the single source of truth for the structure**, not any example file.
+
+There are **two kinds of browser-readable page**, and they are not interchangeable. This section covers the **backward-looking** one — explaining work already done (`sing7-<topic>-explained.html`, gitignored, throwaway). The **forward-looking** one — a plan or proposal the owner reviews and comments on _before_ it is built — is the `plan-thread` skill (`.claude/skills/plan-thread/`), which produces a committed `sing7-<topic>-plan.html` with a per-section comment thread the owner writes into from Chrome. Reach for `plan-thread` whenever the owner asks for a plan, design, or proposal to review.
 
 - **When to create one:** a new package or feature, multi-file changes, or any non-obvious logic. **Skip** for trivial/mechanical edits (typo, rename, one-liner, config tweak, pure test changes). When unsure, lean toward creating one; ask if still unsure.
 - **Where / naming:** repo root, `sing7-<topic>-explained.html`. Because they are throwaway, they are **gitignored** (via the `sing7-*-explained.html` pattern) — never commit them.
