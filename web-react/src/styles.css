@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@theme {
+	--color-chord: #1d4ed8; /* deep blue, bold */
+	--color-lyric: #202124; /* near-black */
+	--color-quiet: #61656b; /* part names, (x2) */
+}
