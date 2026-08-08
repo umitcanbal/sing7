@@ -28,17 +28,27 @@ func main() {
 
 	log.Printf("SING7 server listening on %s", config.Address)
 
-	err = http.ListenAndServe(config.Address, newRouter(library))
+	// err = http.ListenAndServe(config.Address, newRouter(library))
+	err = http.ListenAndServe(config.Address, logRequests(newRouter(library)))
 	if err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }
 
 func newRouter(library *store.SongStore) *http.ServeMux {
+	log.Printf("helloo!!")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.Handle("/rpc/", httpapi.NewSongServiceServer(httpapi.NewSongService(library)))
 	return mux
+}
+
+func logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("hellooo22!!")
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // handleHealth reports that the server is up.

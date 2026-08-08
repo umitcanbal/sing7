@@ -2,9 +2,10 @@ package httpapi
 
 import (
 	"context"
+	"time"
 
-	"sing7/internal/store"
 	"sing7/internal/song"
+	"sing7/internal/store"
 )
 
 // SongService implements SongServiceServer by delegating to the store.
@@ -17,6 +18,7 @@ func NewSongService(s *store.SongStore) *SongService {
 }
 
 func (s *SongService) ListSongs(_ context.Context, q *string) ([]*SongListItem, error) {
+	time.Sleep(time.Second)
 	query := ""
 	if q != nil {
 		query = *q

@@ -1,0 +1,713 @@
+<meta charset="utf-8">
+<title>SING7 — React Build Steps</title>
+<style>
+  :root {
+    --page: #f4f4f2;
+    --paper: #ffffff;
+    --text: #202124;
+    --muted: #61656b;
+    --line: #d9dadd;
+    --soft: #f7f7f6;
+    --code: #f1f2f3;
+    --accent: #2f5f8f;
+    --good: #2f7d43;
+    --warn: #9a6b00;
+    --you: #8a4b9c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background: var(--page);
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.55;
+  }
+  html { scroll-behavior: smooth; }
+  .layout {
+    width: calc(100% - 32px); margin: 24px auto 80px;
+    display: flex; gap: 24px; align-items: flex-start;
+  }
+  main {
+    flex: 1; min-width: 0; max-width: 1040px;
+    padding: 32px 40px 56px; background: var(--paper); border: 1px solid var(--line);
+  }
+
+  /* ---- sidebar ---- */
+  .toc {
+    position: sticky; top: 24px; align-self: flex-start;
+    width: 215px; flex: none;
+    max-height: calc(100vh - 48px); overflow-y: auto;
+    padding: 14px 12px; background: var(--paper); border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .toc h3 {
+    margin: 0 0 4px; font-size: 11px; font-weight: bold;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  }
+  .toc .count { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+  .toc a {
+    display: block; position: relative;
+    padding: 5px 6px 5px 20px; margin-bottom: 1px;
+    color: var(--text); text-decoration: none; line-height: 1.35;
+  }
+  .toc a:hover { background: var(--soft); }
+  .toc a::before { content: "●"; position: absolute; left: 5px; }
+  .toc a.open::before { color: #c8cacd; }
+  .toc a.proposed::before { color: var(--warn); }
+  .toc a.resolved::before { color: var(--good); }
+  .toc a.resolved { color: var(--muted); }
+  @media (max-width: 1080px) { .toc { display: none; } }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  h2 { margin: 38px 0 10px; padding-top: 8px; border-top: 2px solid var(--text); font-size: 22px; }
+  h3 { margin: 18px 0 6px; font-size: 16px; }
+  p { margin: 8px 0 14px; }
+  ul, ol { margin: 8px 0 14px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .muted { color: var(--muted); }
+  code {
+    font-family: Consolas, Monaco, monospace; font-size: .94em;
+    background: var(--code); padding: 0 3px; border-radius: 2px;
+  }
+  pre {
+    margin: 0 0 14px; padding: 12px; overflow: auto;
+    background: var(--code); border: 1px solid #d0d2d5;
+    font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--soft); }
+
+  /* ---- toolbar ---- */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 24px; padding: 10px 14px;
+    background: #eef1f5; border: 1px solid #c7d4e2;
+  }
+  .bar .status { margin-left: auto; font-size: 13px; color: var(--muted); }
+  button {
+    font-family: inherit; font-size: 13px; font-weight: bold;
+    padding: 7px 13px; cursor: pointer;
+    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 3px;
+  }
+  button.ghost { background: #fff; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .howto { margin: 0 0 26px; padding: 12px 14px; background: #fff9e8; border: 1px solid #ead9a8; }
+  .howto ol { margin: 6px 0 0; }
+
+  /* ---- plan section ---- */
+  .section { margin: 0 0 8px; scroll-margin-top: 16px; }
+  .plan { padding: 12px 14px; background: var(--soft); border-left: 3px solid var(--accent); }
+  .plan .lbl {
+    display: block; margin-bottom: 4px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--accent);
+  }
+  .plan > div > *:first-child { margin-top: 0; }
+  .plan > div > *:last-child { margin-bottom: 0; }
+
+  /* ---- thread ---- */
+  .thread { margin: 12px 0 0; padding: 0 0 0 14px; border-left: 3px solid var(--line); }
+  .thread.resolved { border-left-color: var(--good); }
+  .thread.proposed { border-left-color: var(--warn); }
+  .entry { margin: 0 0 10px; }
+  .entry .who {
+    display: inline-block; margin-bottom: 2px;
+    font-size: 11px; font-weight: bold; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .entry.umit .who { color: var(--you); }
+  .entry.claude .who { color: var(--accent); }
+  .entry .body { margin: 0; padding: 8px 11px; border: 1px solid var(--line); background: #fff; white-space: pre-wrap; }
+  .entry.umit .body { border-left: 3px solid var(--you); }
+  .entry.claude .body { border-left: 3px solid var(--accent); }
+
+  details.history { margin: 0 0 10px; }
+  details.history summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details.history[open] summary { margin-bottom: 10px; }
+  details.history .entry .body { color: var(--muted); text-decoration: line-through; background: #fbfbfa; }
+  details.history .entry .who { text-decoration: line-through; opacity: .7; }
+
+  .plan.agreed { background: #eef7ee; border-left-color: var(--good); }
+  .plan.agreed .lbl { color: var(--good); }
+  .plan .reopen {
+    margin-top: 12px; padding: 3px 10px; font-size: 12px; font-weight: normal;
+    background: #fff; color: var(--muted); border-color: var(--line);
+  }
+  .plan .reopen:hover { color: var(--text); }
+
+  .proposal { margin: 0 0 10px; padding: 10px 12px; background: #fff9e8; border: 1px solid #ead9a8; border-left: 3px solid var(--warn); }
+  .proposal .lbl {
+    display: block; margin-bottom: 3px;
+    font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; color: var(--warn);
+  }
+  .proposal .ask { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .proposal .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .proposal button.agree { background: var(--good); border-color: var(--good); }
+  .proposal details { margin-top: 8px; }
+  .proposal details summary { cursor: pointer; font-size: 13px; color: var(--warn); }
+  .proposal details > div { margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--line); }
+
+  .compose { margin: 4px 0 0; }
+  .compose textarea {
+    width: 100%; min-height: 68px; padding: 8px 10px;
+    font-family: inherit; font-size: 14px; line-height: 1.5;
+    border: 1px solid var(--line); background: #fff; resize: vertical;
+  }
+  .compose textarea:focus { outline: 2px solid var(--you); outline-offset: -1px; }
+  .compose .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .compose .hint { font-size: 12px; color: var(--muted); }
+  .unsaved { color: var(--warn); font-weight: bold; }
+</style>
+
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+  <h1>SING7 — React Build Steps</h1>
+  <p class="muted">The order we build the React app in. Ten steps, each one ending with something you can see in the browser. What we are building is in sing7-frontend-requirements.md, and how it is put together is in sing7-frontend-architecture.md — this page is only the order, so you can follow along instead of getting a finished folder.</p>
+
+  <div class="bar">
+    <button id="connect" class="ghost">Connect this file</button>
+    <button id="save" disabled>Save my comments</button>
+    <span class="status" id="status">not connected</span>
+  </div>
+
+  <div class="howto">
+    <strong>How to use this page</strong>
+    <ol>
+      <li>Click <strong>Connect this file</strong> and pick <code id="file-name">this file</code> in the box that opens. You only do this once per browser session.</li>
+      <li>Write a comment under any section, then click <strong>Save my comments</strong>. Your text is written into this HTML file.</li>
+      <li>Tell Claude you saved. It reads the file, writes an answer into it, and tells you to reload.</li>
+      <li>When we agree, Claude puts the final text in a yellow box. Only you can close a section: press <strong>Agree</strong>, then <strong>Save my comments</strong>. If you do not agree, just write a comment instead.</li>
+    </ol>
+  </div>
+
+  <div id="sections"></div>
+
+</main>
+</div>
+
+<script id="thread-data" type="application/json">
+{
+  "general": [],
+  "sections": [
+    {
+      "id": "how-we-work",
+      "title": "How we work through a step",
+      "plan": "<p>Before the steps themselves, the loop we repeat for each one.\u003c/p><ol><li><strong>I build the step.\u003c/strong> Only that step. If I notice something that belongs to a later step, it waits.\u003c/li><li><strong>I tell you exactly what to run and what you should see.\u003c/strong> One or two commands, and a sentence describing the result, so you can tell straight away whether it worked.\u003c/li><li><strong>I write a throwaway explanation page for every step\u003c/strong> — the <code>sing7-&lt;topic&gt;-explained.html\u003c/code> kind. Even a small, simple step gets one; it is just short. At the top of every page is a kickoff prompt you paste into a new Claude Code session, so you can ask questions there instead of in this thread. These pages are not committed, and you delete them when you are done.\u003c/li><li><strong>You ask questions until the step makes sense.\u003c/strong> This is the point of going step by step, so it is not a delay, it is the work.\u003c/li><li><strong>We move on.\u003c/strong>\u003c/li>\u003c/ol><p><strong>The exact kickoff prompt.\u003c/strong> This is a React version of the one already in CLAUDE.md, but it stays only here, on this page — CLAUDE.md itself does not change. It now also points the new session at the two docs everything is built from, since CLAUDE.md alone does not mention them:\u003c/p><pre>Read `sing7-&lt;topic&gt;-explained.html` and the files it documents — `&lt;actual source paths for this step, e.g. src/song-list/*.tsx&gt;`, including their tests. For background, this React app is built from `sing7-frontend-requirements.md` (what it must do) and `sing7-frontend-architecture.md` (how it is put together) — read those too. I'm new to React and modern frontend concepts and want to understand this change and learn the ideas behind it properly; I'll ask questions. Please answer clearly, simply and most importantly briefly (default to 3 sentences or fewer and I will iterate if needed) and don't modify any files.\u003c/pre><p><strong>Copy icon on the prompt.\u003c/strong> Selecting a 10-line prompt by hand is fiddly, so every <code>explained.html\u003c/code> now gets a small clipboard icon (📋) in the top-right corner of the grey prompt box. Click it and the whole prompt copies to your clipboard; the icon turns into a check mark (✅) for a second so you know it worked. Plain JavaScript, no library, built right into the box like this:\u003c/p><pre>&lt;div style=\"position:relative;\"&gt;\n  &lt;pre id=\"kickoff-prompt\" style=\"padding-right:2.5em;\"&gt;...the prompt text...&lt;/pre&gt;\n  &lt;button onclick=\"navigator.clipboard.writeText(document.getElementById('kickoff-prompt').innerText); this.textContent='✅'; setTimeout(() =&gt; this.textContent='📋', 1200);\" style=\"position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; font-size:1.1em;\" title=\"Copy prompt\"&gt;📋&lt;/button&gt;\n&lt;/div&gt;\u003c/pre><p>This wraps around the kickoff prompt block that's already in every <code>explained.html\u003c/code>. Nothing about the prompt's wording changes.\u003c/p><p><strong>Sidebar navigation.\u003c/strong> Every <code>explained.html\u003c/code> also gets a left-hand sidebar listing the kickoff prompt and each of its sections as clickable links, using the same sticky sidebar style already built for this plan page. Click a link and it jumps to that section; the current one highlights as you scroll. Keep it even on a short page — steady habit beats saving space.\u003c/p><p><strong>The rule that shapes every step below: each one ends with something you can SEE in the browser.\u003c/strong> Not \"the API layer is done\" — that is invisible and you cannot judge it. Something on screen, every time.\u003c/p><p><strong>If a step turns out to be too big to follow, we cut it in half.\u003c/strong> Saying that is normal, not a failure. Step 5 in particular may want splitting once we are in it.\u003c/p><p><strong>Ugly is allowed early.\u003c/strong> Steps 2 and 3 deliberately look like nothing — plain black text on white. Making them pretty before the plumbing works means debugging two things at once.\u003c/p>",
+      "status": "resolved",
+      "entries": [
+        {
+          "author": "umit",
+          "text": "I think we can change this section a little bit to make our collaboration more efficient. So you said number three, for anything not trivial you will write an HTML artifact to explain. I think we can do it for basically all the steps, even if the step is small and simple and straightforward. You can still create an explanation as an HTML artifact. It doesn't have to be long. It can be short. And also, what we can do is that if you can check the cloud.md, line 90, it says it creates, in the HTML artifact, it creates a copy, paste, already prompt that I can simply copy and start a new cloud session and paste it. So then I can have an isolated session just for my Q&A with another cloud session. But with this prompt, I will just copy paste rather than explaining where we are, which step we were, we completed, et cetera, et cetera. Of course, in the cloud.md, the line 90, it's about the go-related executions. So we just need to simply change that part so that it applies to React. And I would like to learn React. And I would like to learn the fundamental front-end concepts to set the correct mental model.\n\nThe exact part from CLAUDE.md: \"> Read `sing7-<topic>-explained.html` and the files it documents — `<actual source paths for this change, e.g. internal/parser/*.go>`, including their tests. I'm a frontend developer, new to Go and to backend concepts, and want to understand this change; I'll ask questions. Please answer clearly, simply and most importantly briefly (Default to 3 sentences or fewer and I will iterate if needed) and don't modify any files.\""
+        },
+        {
+          "author": "claude",
+          "text": "Both good calls, and cheap to do.\n\nExplained pages for every step: agreed. A short one costs almost nothing, and it keeps the habit steady instead of me judging each time whether a step is \"trivial enough\" to skip. For a truly tiny step it will just be a few short sentences, not the full nine-section template.\n\nKickoff prompt: also agreed, but the exact wording in CLAUDE.md today is written for Go and backend work (\"new to Go and to backend concepts\"). For React work you are learning something different — React and frontend ideas, not Go — so I would not reuse that line as-is. I would add a second version of the kickoff prompt in CLAUDE.md, for frontend and React changes, and each explained.html would use whichever one matches what it documents.\n\nI put the reworded loop, plus a note about that CLAUDE.md change, in the amber box below. Have a look and tell me if the wording is right before you agree."
+        },
+        {
+          "author": "umit",
+          "text": "You don't need to update the Cloud.md for the second version. It's it's it's not needed. I just want it to live here and you said that you are not going to use the existing one because it's Go related. Yes, I agree but also please show me the prompt that you want to use for this project after each section. I mean show me the prompt exact prompt so that I can I can say it's good or not."
+        },
+        {
+          "author": "claude",
+          "text": "Both fixed.\n\nNo CLAUDE.md edit: agreed. That file is the Go/backend record, and this prompt is only for the React work, so it stays on this page and I copy it by hand into the top of each explained.html. Nothing outside this file changes.\n\nThe exact prompt is in the grey box in the amber section below, so you can read it character for character. Tell me if the wording, or the example file path in it, needs to change."
+        },
+        {
+          "author": "umit",
+          "text": "don't you think, you need to also define that there are these files where we derive the whole plan from; \"sing7-frontend-architecture.md\" and \"sing7-frontend-requirements.md\"? So, in the new session, there is some context related to the changes."
+        },
+        {
+          "author": "claude",
+          "text": "Good catch, agreed. A fresh session reads CLAUDE.md automatically, but CLAUDE.md only points at the Go docs — it says nothing about the two React docs, so a new session would start blind on those. I've added a line naming both files. Updated prompt is in the box below."
+        },
+        {
+          "author": "umit",
+          "text": "add a copy icon to the kickoff prompt box in explained.html files"
+        },
+        {
+          "author": "claude",
+          "text": "Agreed, cheap and worth it. You picked the icon-in-the-corner style over a plain text button, so that's what's in the box below: a small 📋 sitting in the top-right of the grey prompt box, plain JavaScript using the browser's clipboard API, no library. Click it, it copies the whole prompt, and it turns into a ✅ for a second so you know it worked. Full updated section text, with the code, is in the proposed box below."
+        },
+        {
+          "author": "umit",
+          "text": "we can add a sidebar as we discussed"
+        },
+        {
+          "author": "claude",
+          "text": "Added — same paragraph as the one I put in CLAUDE.md just now, since you wanted it in both places. It reuses this very page's own sidebar style: a sticky link list on the left, one link per section, current one highlighted while you scroll. Full updated section text is in the proposed box below."
+        }
+      ]
+    },
+    {
+      "id": "step-01",
+      "title": "Step 1 — An app that runs",
+      "plan": "<p><strong>Goal:\u003c/strong> an empty React app running next to the Go server, with the tooling in place and nothing else.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>web-react/\u003c/code> created with Vite, React 19, TypeScript, using pnpm.\u003c/li><li>Tailwind 4 through <code>@tailwindcss/vite\u003c/code>, and <code>styles.css\u003c/code> with the <code>@theme\u003c/code> colours and sizes from the architecture doc.\u003c/li><li>Biome, with one <code>biome.json\u003c/code>.\u003c/li><li>The Vite proxy: <code>/rpc\u003c/code> forwarded to <code>localhost:8080\u003c/code>.\u003c/li><li>One page showing the app name, styled with a Tailwind class, so we know Tailwind is really running.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> <code>pnpm dev\u003c/code>, open <code>localhost:5173\u003c/code>, and a page with \"SING7\" on it in the near-black lyric colour. Change one value in <code>@theme\u003c/code>, save, and watch it change without reloading.\u003c/p><p><strong>Worth asking about:\u003c/strong> what Vite actually does, why the proxy is needed at all, and what <code>@theme\u003c/code> replaced now that Tailwind 4 has no config file.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "step-02",
+      "title": "Step 2 — Your 28 songs on the screen",
+      "plan": "<p><strong>Goal:\u003c/strong> the two halves of the app meet. Real data from the Go server, drawn by React.\u003c/p><p>This is the most important early step. If anything is wrong with the plumbing — the proxy, the client, the address — it shows here, while there is almost nothing else to blame.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>src/rpc/client.gen.ts\u003c/code>, copied in by hand, with the comment at the top saying where it came from and which command makes it.\u003c/li><li><code>src/api/client.ts\u003c/code> — one configured client, base address from <code>VITE_API_URL\u003c/code>.\u003c/li><li>TanStack Query set up in <code>main.tsx\u003c/code>, with <code>staleTime: Infinity\u003c/code>.\u003c/li><li><code>useSongList()\u003c/code> in <code>src/api/queries.ts\u003c/code>.\u003c/li><li>The page prints the song titles as a plain list. No styling, no rows, no search.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> the names of your 28 real songs, in ugly black text. Then stop the Go server, reload, and see it fail — the error handling is not built yet, and seeing the raw failure now makes step 9 easier to understand later.\u003c/p><p><strong>Worth asking about:\u003c/strong> what TanStack Query is doing that a plain fetch would not, why <code>staleTime: Infinity\u003c/code> is right here, and what the proxy did to the request.\u003c/p>",
+      "status": "resolved",
+      "entries": []
+    },
+    {
+      "id": "step-03",
+      "title": "Step 3 — Two screens and the router",
+      "plan": "<p><strong>Goal:\u003c/strong> you can move between the list and a song. Still ugly.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li>TanStack Router with the file-based plugin.\u003c/li><li><code>routes/__root.tsx\u003c/code>, <code>routes/index.tsx\u003c/code>, <code>routes/songs.$slug.tsx\u003c/code>, <code>routes/$.tsx\u003c/code>.\u003c/li><li>The list turns each title into a link.\u003c/li><li>The song route calls <code>useSong(slug)\u003c/code> and prints the song's title and artist. Nothing else yet.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> click a song, the address becomes <code>/songs/coldplay-dont-panic\u003c/code> and the page shows that song's title. Press Back and you are on the list. Type a slug that does not exist and you get the not-found screen.\u003c/p><p><strong>Worth asking about:\u003c/strong> how a file name becomes a route, how <code>$slug\u003c/code> in a file name turns into a value your code can read, and what the router generates behind the scenes.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-04",
+      "title": "Step 4 — The song list screen, properly",
+      "plan": "<p><strong>Goal:\u003c/strong> the first finished screen, including the search behaviour we argued about.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>SongRow\u003c/code> — title, artist under it, key on the right.\u003c/li><li><code>SearchBox\u003c/code>.\u003c/li><li><code>filterSongs.ts\u003c/code> — strict letter matching — <strong>and its unit tests\u003c/strong>. The first tests in the project.\u003c/li><li><code>validateSearch\u003c/code> on the index route with Zod, so <code>?q=\u003c/code> is typed.\u003c/li><li>Writing the search back to the address with <code>replace: true\u003c/code>.\u003c/li><li>The <code>useMemo\u003c/code> over the song list and <code>q\u003c/code>.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> type <code>panic\u003c/code> and the list shrinks to one row while the address becomes <code>/?q=panic\u003c/code>. Open the song, press Back, and your search is still there. Copy the address into a new tab and get the same filtered list. Type five letters and press Back once — you leave the app, you do not walk back through <code>pani\u003c/code>, <code>pan\u003c/code>, <code>pa\u003c/code>.\u003c/p><p><strong>Worth asking about:\u003c/strong> that last one especially — it is the <code>replaceState\u003c/code> versus <code>pushState\u003c/code> difference from the requirements, and this is where you can watch it behave.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-05",
+      "title": "Step 5 — Chords above lyrics",
+      "plan": "<p><strong>Goal:\u003c/strong> the heart of the app. A real song, chords over the right words.\u003c/p><p><strong>This is the step to slow down on.\u003c/strong> Everything around it already works by now, so if something looks wrong here, it is the rendering and nothing else. It is also the step most likely to want splitting in two — the components first, the awkward cases second.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>SongBody\u003c/code>, <code>SongSection\u003c/code>, <code>SongLine\u003c/code>, <code>ChordPart\u003c/code>.\u003c/li><li>The <code>.part\u003c/code>, <code>.chord\u003c/code>, <code>.text\u003c/code>, <code>.line\u003c/code> CSS classes in <code>styles.css\u003c/code>.\u003c/li><li>The chord colour and lyric size, from <code>@theme\u003c/code>.\u003c/li><li>Unit tests for the five awkward cases from the requirements.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> open <em>Don't Panic\u003c/em> and read it like a song sheet. Then go looking for the strange ones on purpose:\u003c/p><ul><li>a chord landing mid-word — it should stay mid-word, exactly as the file has it\u003c/li><li>a lyric line with no chord above it, sitting tight under the line before\u003c/li><li>a chords-only intro line with no empty lyric row under it\u003c/li><li>an <code>(×2)\u003c/code> note, greyed, at the end of a line\u003c/li><li>a song with no part names, starting with no heading\u003c/li>\u003c/ul><p><strong>Worth asking about:\u003c/strong> anything. This is the part of the app worth understanding properly, and the part you will look at every time you use it.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-06",
+      "title": "Step 6 — The rest of the song page",
+      "plan": "<p><strong>Goal:\u003c/strong> a complete song page, with everything except the scrolling.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>SongMeta\u003c/code> — title, artist, and the grey info line, showing only the fields the song actually has.\u003c/li><li><code>StrumGrid\u003c/code> — fixed-width, strokes above beats, one grid per pattern, sideways scroll if it is too wide.\u003c/li><li>The closed \"Song info\" box at the bottom for <code>meta.notes\u003c/code>.\u003c/li><li>The back link.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> open a song with a strum pattern (Coldplay, Blink-182) and the grid lines up column by column. Open one without (most of them) and there is no empty box where it would have been. Open a song with a YouTube link in its notes and find it tucked at the bottom, out of the way.\u003c/p><p><strong>Worth asking about:\u003c/strong> why the strum grid is the one place we use a fixed-width font, when the whole point of step 5 was avoiding one.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-07",
+      "title": "Step 7 — Auto-scroll",
+      "plan": "<p><strong>Goal:\u003c/strong> the app does the thing it exists to do.\u003c/p><p>The trickiest code in the project, but it touches nothing that came before it, so by now everything else is known-good.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>scroll/atoms.ts\u003c/code> — <code>scrollSpeedAtom\u003c/code> (saved) and <code>isAutoScrollingAtom\u003c/code>.\u003c/li><li><code>ScrollBar\u003c/code> — the floating bar: play/pause button, speed slider, the percentage.\u003c/li><li>The extra space at the end of the song so the last line clears the bar.\u003c/li><li><code>useAutoScroll\u003c/code> — the frame loop, the 20-pixels-per-second constant, where it starts from, stopping at the bottom, and a hand scroll stopping it.\u003c/li><li>Unit tests for the start-position rules and the hand-scroll pause.\u003c/li>\u003c/ul><p><strong>What you will see, and each one is worth checking on purpose:\u003c/strong>\u003c/p><ul><li>press play on a fresh song and it jumps past the title and strum grid, then creeps\u003c/li><li>drag the slider and the speed changes while it is moving\u003c/li><li>scroll with the wheel and it stops, exactly as if you had pressed pause\u003c/li><li>let it reach the bottom and it stops there, with the button back on play\u003c/li><li>press play at the bottom and it jumps back to the song's first line\u003c/li><li>pause in the middle, press play, and it carries on from there instead of jumping\u003c/li>\u003c/ul><p><strong>Worth asking about:\u003c/strong> how the hook tells your scrolling apart from its own — that is the one genuinely clever bit in the app.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-08",
+      "title": "Step 8 — Spacebar and keeping the screen awake",
+      "plan": "<p><strong>Goal:\u003c/strong> both hands can stay on the guitar.\u003c/p><p>Small, but this is the step that makes the app usable for its actual purpose.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li>A window key listener: space toggles play, and cancels the browser's own page-down.\u003c/li><li>Ignored while the search box has focus.\u003c/li><li><code>useWakeLock\u003c/code> — ask when the scroll starts, release when it stops, do nothing if the browser refuses, and ask again when the tab becomes visible if the scroll is still running.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> press space and it starts, press space again and it stops — and the page does not jump a screen down like it normally would. Then start a scroll and leave the machine alone for longer than your screen timeout: it should stay on, and go back to normal once you pause.\u003c/p><p><strong>Worth asking about:\u003c/strong> the wake lock, since it is the one browser feature here that can silently do nothing, and the app is written to not care when it does.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-09",
+      "title": "Step 9 — When things are loading, empty or broken",
+      "plan": "<p><strong>Goal:\u003c/strong> the app behaves when nothing is going right.\u003c/p><p>Deliberately near the end: to build these you need something that can actually be loading or failing, and now everything can.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>Skeleton\u003c/code> — grey song-shaped rows while the list loads.\u003c/li><li>\"No songs match…\" with a clear button.\u003c/li><li>Title and artist showing immediately on a song page when we already have them from the list.\u003c/li><li>The not-found screen for an unknown slug.\u003c/li><li><code>ErrorState\u003c/code> with a Retry button, wired to Query's <code>refetch()\u003c/code>.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> stop the Go server and reload — a plain message and a Retry button, no spinner forever and no error dump. Start the server again, press Retry, and the app comes back without a page reload. Search for <code>zzz\u003c/code> and get a sentence instead of a blank screen.\u003c/p><p><strong>Worth asking about:\u003c/strong> why skeleton rows instead of a spinner, and why the page must not jump when the real list arrives.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "step-10",
+      "title": "Step 10 — Tests green, tooling clean",
+      "plan": "<p><strong>Goal:\u003c/strong> the safety net, and a tidy repo.\u003c/p><p>Most of the unit tests were written along the way, in the steps they belong to. This step is about making the whole thing pass together and adding the one end-to-end run.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li>Every Vitest case from the architecture doc passing: <code>filterSongs\u003c/code>, the five awkward line cases, the auto-scroll start rules.\u003c/li><li>Biome clean across the app.\u003c/li><li>One Playwright run: open the app, type in the search box, check the address gained <code>?q=\u003c/code>, open a song, press space, check the page moved.\u003c/li><li>The scripts in <code>package.json\u003c/code> so all of it runs with one command each.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> a green test run, and a Playwright window driving your app by itself.\u003c/p><p><strong>Worth asking about:\u003c/strong> why we test these things and not the others — especially why there is no test of how it looks.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    },
+    {
+      "id": "after",
+      "title": "After the ten steps",
+      "plan": "<p>Not part of the build, but worth knowing where it goes next so the order above makes sense.\u003c/p><ul><li><strong>The SvelteKit app\u003c/strong> — the same requirements, the same folder shape, the same test cases. This is the comparison the whole project is for.\u003c/li><li><strong>Docker and deployment\u003c/strong> — the Go server and the built frontend files, and the reverse proxy question.\u003c/li><li><strong>Phase 2\u003c/strong> — chord diagrams, transpose, print, phones.\u003c/li>\u003c/ul><p>None of this changes the ten steps. It is listed so nothing above quietly tries to prepare for it — a step that adds something \"because we will need it later\" is a step that cannot be checked today.\u003c/p>",
+      "status": "proposed",
+      "entries": []
+    }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATA = JSON.parse(document.getElementById("thread-data").textContent);
+  var FILE_NAME = decodeURIComponent(location.pathname.split("/").pop() || "plan.html");
+  var DRAFT_KEY = "plan-thread-drafts:" + FILE_NAME;
+  var GENERAL_ID = "__general";   // draft key for the un-sectioned thread
+  var HANDLE_KEY = "handle:" + FILE_NAME;
+
+  var host = document.getElementById("sections");
+  var tocHost = document.getElementById("toc");
+  var statusEl = document.getElementById("status");
+  var connectBtn = document.getElementById("connect");
+  var saveBtn = document.getElementById("save");
+  var fileHandle = null;
+  var fileHandleName = "";
+  var pendingChanges = false;   // an Agree / Reopen click waiting to be saved
+
+  var nameSlot = document.getElementById("file-name");
+  if (nameSlot) { nameSlot.textContent = FILE_NAME; }
+
+  /* ---------- drafts: unsaved typing survives a reload ---------- */
+
+  function loadDrafts() {
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function saveDraft(id, text) {
+    var drafts = loadDrafts();
+    if (text) { drafts[id] = text; } else { delete drafts[id]; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+  }
+
+  /* ---------- render ---------- */
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function renderEntry(entry) {
+    var wrap = el("div", "entry " + entry.author);
+    wrap.appendChild(el("span", "who", entry.author === "umit" ? "Umit" : "Claude"));
+    wrap.appendChild(el("p", "body", entry.text));
+    return wrap;
+  }
+
+  // A proposal is the exact final wording Claude is offering, shown before anything
+  // closes. Nothing is settled until the owner presses the button.
+  function renderProposal(section) {
+    var box = el("div", "proposal");
+    box.appendChild(el("span", "lbl", "Final text — you have not agreed yet"));
+
+    if (section.proposedPlan) {
+      var body = document.createElement("div");
+      body.innerHTML = section.proposedPlan;
+      box.appendChild(body);
+      box.appendChild(el("p", "ask", "If you agree, this replaces the plan text above and becomes the final text for the whole section."));
+    } else {
+      box.appendChild(el("p", null, "Nothing new to show — the plan text above is already the final text."));
+      box.appendChild(el("p", "ask", "If you agree, the whole section is settled as written above, including any part we never talked about."));
+    }
+
+    var actions = el("div", "actions");
+
+    var agree = el("button", "agree", "Agree — close this section");
+    agree.addEventListener("click", function () { acceptProposal(section); });
+    actions.appendChild(agree);
+
+    box.appendChild(actions);
+    box.appendChild(el("p", "ask", "Do not agree? Just write a comment instead and the section stays open. Nothing is written to the file until you click “Save my comments”."));
+    return box;
+  }
+
+  // Accepting is the owner's act alone — this is the only path to "resolved".
+  function acceptProposal(section) {
+    section.status = "resolved";
+    if (section.proposedPlan) {
+      section.plan = section.proposedPlan;
+      delete section.proposedPlan;
+    }
+    delete section.agreed;
+    delete section.wasResolved;
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function render() {
+    var drafts = loadDrafts();
+    host.innerHTML = "";
+
+    DATA.sections.forEach(function (section) {
+      var card = el("div", "section");
+      card.id = "section-" + section.id;
+      card.appendChild(el("h2", null, section.title));
+
+      var resolved = section.status === "resolved";
+      var plan = el("div", "plan" + (resolved ? " agreed" : ""));
+      plan.appendChild(el("span", "lbl", resolved ? "Agreed" : "Plan"));
+      var planBody = document.createElement("div");
+      planBody.innerHTML = section.plan;   // authored by Claude, not user input
+      plan.appendChild(planBody);
+
+      if (resolved) {
+        var reopen = el("button", "reopen", "Reopen");
+        reopen.addEventListener("click", function () { reopenSection(section); });
+        plan.appendChild(reopen);
+      } else if (section.wasResolved) {
+        // Reopened by mistake, or you changed your mind back. The text has not moved
+        // since you agreed to it, so agreeing again is clear — it undoes the reopen.
+        var reAgree = el("button", "reopen", "Agree as-is again");
+        reAgree.addEventListener("click", function () { acceptProposal(section); });
+        plan.appendChild(reAgree);
+      }
+
+      card.appendChild(plan);
+
+      var thread = el("div", "thread " + (section.status || "open"));
+
+      if (resolved) {
+        if (section.entries.length) {
+          var history = el("details", "history");
+          history.appendChild(el("summary", null, "show discussion (" + section.entries.length + ")"));
+          section.entries.forEach(function (entry) { history.appendChild(renderEntry(entry)); });
+          thread.appendChild(history);
+        }
+      } else {
+        section.entries.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+        if (section.status === "proposed") { thread.appendChild(renderProposal(section)); }
+
+        var compose = el("div", "compose");
+        var box = el("textarea");
+        box.placeholder = "Your comment on this section…";
+        box.value = drafts[section.id] || "";
+        box.addEventListener("input", function () {
+          saveDraft(section.id, box.value);
+          markUnsaved();
+        });
+        compose.appendChild(box);
+
+        var row = el("div", "row");
+        row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+        compose.appendChild(row);
+
+        thread.appendChild(compose);
+      }
+
+      card.appendChild(thread);
+      host.appendChild(card);
+    });
+
+    renderGeneral(drafts);
+    renderToc();
+  }
+
+  // Reopening a settled section drops it back to plain discussion rather than back to
+  // a proposal — showing the Agree button again would just invite re-agreeing to the
+  // wording that was rejected. The old text is not restored; the thread holds the history.
+  function reopenSection(section) {
+    section.status = "open";
+    section.wasResolved = true;   // lets you take the reopen back
+    pendingChanges = true;
+    render();
+    markUnsaved();
+  }
+
+  function renderToc() {
+    if (!tocHost) { return; }
+    tocHost.innerHTML = "";
+
+    var settled = 0;
+    DATA.sections.forEach(function (section) {
+      if (section.status === "resolved") { settled++; }
+    });
+
+    tocHost.appendChild(el("h3", null, "Steps"));
+    tocHost.appendChild(el("p", "count", settled + " of " + DATA.sections.length + " agreed"));
+
+    DATA.sections.forEach(function (section) {
+      var link = el("a", section.status || "open", section.title);
+      link.href = "#section-" + section.id;
+      tocHost.appendChild(link);
+    });
+
+    var general = el("a", "open", "General");
+    general.href = "#section-" + GENERAL_ID;
+    tocHost.appendChild(general);
+  }
+
+  // A thread that belongs to no section — for things the plan missed, or a point that
+  // touches all of it. It never closes; there is nothing to agree to.
+  function renderGeneral(drafts) {
+    if (!DATA.general) { DATA.general = []; }
+
+    var card = el("div", "section");
+    card.id = "section-" + GENERAL_ID;
+    card.appendChild(el("h2", null, "General"));
+    card.appendChild(el("p", "muted", "Anything that does not fit one section: a topic the plan missed completely, something that touches several sections at once, or a question about the whole thing. This one never closes."));
+
+    var thread = el("div", "thread open");
+    DATA.general.forEach(function (entry) { thread.appendChild(renderEntry(entry)); });
+
+    var compose = el("div", "compose");
+    var box = el("textarea");
+    box.placeholder = "Something we have not covered anywhere…";
+    box.value = drafts[GENERAL_ID] || "";
+    box.addEventListener("input", function () {
+      saveDraft(GENERAL_ID, box.value);
+      markUnsaved();
+    });
+    compose.appendChild(box);
+
+    var row = el("div", "row");
+    row.appendChild(el("span", "hint", "written into this file when you click “Save my comments”"));
+    compose.appendChild(row);
+
+    thread.appendChild(compose);
+    card.appendChild(thread);
+    host.appendChild(card);
+  }
+
+  function markUnsaved() {
+    statusEl.innerHTML = "<span class='unsaved'>unsaved changes</span>";
+  }
+
+  /* ---------- remember the file handle between reloads ---------- */
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      var request = indexedDB.open("plan-thread", 1);
+      request.onupgradeneeded = function () { request.result.createObjectStore("kv"); };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error); };
+    });
+  }
+
+  function dbGet(key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv").objectStore("kv").get(key);
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function dbSet(key, value) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction("kv", "readwrite").objectStore("kv").put(value, key);
+        req.onsuccess = function () { resolve(); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  /* ---------- connect / save ---------- */
+
+  var supported = typeof window.showOpenFilePicker === "function";
+
+  function setConnected(name) {
+    fileHandleName = name;
+    statusEl.textContent = "connected to " + name;
+    saveBtn.disabled = false;
+    connectBtn.textContent = "Reconnect file";
+  }
+
+  connectBtn.addEventListener("click", function () {
+    if (!supported) {
+      statusEl.textContent = "this browser can't write files — save will download instead";
+      saveBtn.disabled = false;
+      return;
+    }
+    window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: "HTML", accept: { "text/html": [".html"] } }]
+    }).then(function (handles) {
+      fileHandle = handles[0];
+      return dbSet(HANDLE_KEY, fileHandle).then(function () { setConnected(fileHandle.name); });
+    }).catch(function (error) {
+      if (error && error.name !== "AbortError") { statusEl.textContent = "connect failed: " + error.message; }
+    });
+  });
+
+  function collectComments() {
+    var drafts = loadDrafts();
+    var added = 0;
+    DATA.sections.forEach(function (section) {
+      var text = (drafts[section.id] || "").trim();
+      if (text && section.status !== "resolved") {
+        section.entries.push({ author: "umit", text: text });
+        added++;
+      }
+    });
+
+    var general = (drafts[GENERAL_ID] || "").trim();
+    if (general) {
+      if (!DATA.general) { DATA.general = []; }
+      DATA.general.push({ author: "umit", text: general });
+      added++;
+    }
+
+    return added;
+  }
+
+  function buildUpdatedHtml(originalText) {
+    var json = JSON.stringify(DATA, null, 2).split("</").join("\\u003c/");
+    var pattern = /(<script id="thread-data" type="application\/json">)[\s\S]*?(<\/script>)/;
+    if (!pattern.test(originalText)) { throw new Error("could not find the thread-data block"); }
+    return originalText.replace(pattern, function (match, open, close) {
+      return open + "\n" + json + "\n" + close;
+    });
+  }
+
+  function downloadFallback(text) {
+    var blob = new Blob([text], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = FILE_NAME;
+    link.click();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = "downloaded — move it into the repo, replacing the old file";
+  }
+
+  saveBtn.addEventListener("click", function () {
+    var added = collectComments();
+    if (!added && !pendingChanges) {
+      statusEl.textContent = "nothing to save — write a comment, or agree to a proposal";
+      return;
+    }
+
+    statusEl.textContent = "saving…";
+
+    var proceed = fileHandle
+      ? fileHandle.queryPermission({ mode: "readwrite" }).then(function (state) {
+          return state === "granted" ? "granted" : fileHandle.requestPermission({ mode: "readwrite" });
+        })
+      : Promise.resolve("denied");
+
+    proceed.then(function (state) {
+      if (state !== "granted") { throw new Error("no write permission"); }
+      return fileHandle.getFile()
+        .then(function (file) { return file.text(); })
+        .then(function (originalText) { return buildUpdatedHtml(originalText); })
+        .then(function (updated) {
+          return fileHandle.createWritable().then(function (writable) {
+            return writable.write(updated).then(function () { return writable.close(); });
+          });
+        })
+        .then(function () {
+          localStorage.removeItem(DRAFT_KEY);
+          pendingChanges = false;
+          statusEl.textContent = "saved to " + fileHandleName + " — tell Claude to read it";
+          render();
+        });
+    }).catch(function (error) {
+      // Fall back to a download so nothing is ever lost.
+      try {
+        downloadFallback(buildUpdatedHtml(document.documentElement.outerHTML));
+      } catch (inner) {
+        statusEl.textContent = "save failed: " + error.message;
+      }
+    });
+  });
+
+  /* ---------- boot ---------- */
+
+  render();
+
+  if (supported) {
+    dbGet(HANDLE_KEY).then(function (handle) {
+      if (!handle) { return; }
+      fileHandle = handle;
+      return handle.queryPermission({ mode: "readwrite" }).then(function (state) {
+        setConnected(handle.name);
+        if (state !== "granted") { statusEl.textContent = "connected to " + handle.name + " (will ask permission on save)"; }
+      });
+    }).catch(function () { /* first run, nothing stored */ });
+  } else {
+    statusEl.textContent = "this browser can't write files — save will download instead";
+    saveBtn.disabled = false;
+  }
+})();
+</script>
