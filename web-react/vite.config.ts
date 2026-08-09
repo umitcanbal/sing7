@@ -1,10 +1,17 @@
 import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 export default defineConfig({
-	plugins: [react(), tailwindcss()],
+	// tanstackRouter must come before react() (even though tanstackRouter has `enforce: "pre"` to place itself front regardless of the order): it watches src/routes/ and writes
+	// src/routeTree.gen.ts, also splits component files into two; one being the route (fetched eagerly) and one being the actual component (fetched lazily) which then are compiled by react() like any other file.
+	plugins: [
+		tanstackRouter({ autoCodeSplitting: true }),
+		react(),
+		tailwindcss(),
+	],
 	server: {
 		proxy: {
 			"/rpc": "http://localhost:8080",

@@ -10,3 +10,13 @@ export function useSongList() {
 		select: (data) => data.songs,
 	});
 }
+
+// One full song, fetched when its page opens. Each slug is its own cache entry,
+// so going back to a song you already opened costs no request.
+export function useSong(slug: string) {
+	return useQuery({
+		queryKey: api.queryKey.getSong({ slug }),
+		queryFn: () => api.getSong({ slug }),
+		select: (data) => data.song,
+	});
+}
