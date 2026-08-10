@@ -84,4 +84,21 @@
 	.line--chorded .annotation {
 		padding-top: var(--chord-row);
 	}
+
+	/*
+	 * One strumming pattern: strokes on the top row, beats underneath, one grid
+	 * column per slot.
+	 *
+	 * width: max-content stops the grid being squeezed by its parent, so the
+	 * wrapper's overflow-x can scroll it sideways instead of wrapping it. A
+	 * wrapped grid is a wrong grid.
+	 */
+	.strum {
+		display: grid;
+		width: max-content;
+		justify-items: center;
+		column-gap: 0.25rem;
+		font-family: var(--font-mono);
+		line-height: 1.6;
+	}
 }

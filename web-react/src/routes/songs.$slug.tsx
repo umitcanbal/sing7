@@ -2,9 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSong } from "../api/queries";
 import { SongNotFoundError } from "../rpc/client.gen";
 import { SongBody } from "../song/SongBody";
+import { SongMeta } from "../song/SongMeta";
+import { SongNotes } from "../song/SongNotes";
+import { StrumGrid } from "../song/StrumGrid";
 
-// The song itself is drawn here now. The info line, the strum grid and the
-// notes box are Step 6; the scrolling is Step 7.
+// The complete song page, apart from the scrolling — that is Step 7.
+//
+// The order is deliberate: you read the facts and the strum pattern before you
+// start, and the notes are reference you look at afterwards, if ever. The strum
+// grid does not float, because a pattern is one bar that repeats all song, so it
+// is checked once and then never looked at again.
 function SongScreen() {
 	// The router parsed "$slug" out of the address and typed it for us.
 	const { slug } = Route.useParams();
@@ -26,13 +33,14 @@ function SongScreen() {
 
 	return (
 		<div className="mx-auto max-w-3xl px-4 py-8">
-			<Link to="/" className="text-sm text-quiet">
+			<Link to="/" className="text-sm text-quiet hover:text-lyric">
 				‹ back
 			</Link>
-			<h1 className="mt-2 text-2xl font-bold text-lyric">{song.title}</h1>
-			<p className="mb-8 text-quiet">{song.artist}</p>
 
+			<SongMeta title={song.title} artist={song.artist} meta={song.meta} />
+			<StrumGrid patterns={song.strum} />
 			<SongBody sections={song.sections} />
+			<SongNotes notes={song.meta.notes ?? []} />
 		</div>
 	);
 }
