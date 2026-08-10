@@ -32,6 +32,7 @@ func (s *SongService) ListSongs(_ context.Context, q *string) ([]*SongListItem, 
 }
 
 func (s *SongService) GetSong(_ context.Context, slug string) (*Song, error) {
+	time.Sleep(time.Second)
 	sng, ok := s.store.Get(slug)
 	if !ok {
 		return nil, ErrSongNotFound

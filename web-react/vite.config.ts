@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,5 +16,10 @@ export default defineConfig({
 		proxy: {
 			"/rpc": "http://localhost:8080",
 		},
+	},
+	test: {
+		// Component tests need a document to render into. jsdom is a fake browser
+		// running in Node — enough DOM to mount React and read the markup back.
+		environment: "jsdom",
 	},
 });

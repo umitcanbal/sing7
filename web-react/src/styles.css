@@ -5,3 +5,83 @@
 	--color-lyric: #202124; /* near-black */
 	--color-quiet: #61656b; /* part names, (x2) */
 }
+
+/*
+ * The chord-over-lyric block. This is the one piece of real layout in the app,
+ * so it lives here as named classes rather than a long string of utilities.
+ *
+ * The shape: every part is an inline-block holding a chord row above a text
+ * row. Because they are inline-blocks they flow and wrap like words, so a long
+ * line drops the next part onto a new row without ever splitting a part from
+ * its own chord.
+ */
+@layer components {
+	.line {
+		/* Height of the chord row. Shared by .chord and .annotation so they
+		   agree on where the lyric row starts. */
+		--chord-row: 1.5em;
+		margin-top: 0.35em;
+	}
+
+	.part {
+		display: inline-block;
+		vertical-align: top;
+		/* Lets an unusually long part wrap inside itself instead of running off
+		   the side. Real data has one part 138 characters long. */
+		max-width: 100%;
+	}
+
+	.chord {
+		display: block;
+		min-height: var(--chord-row);
+		line-height: var(--chord-row);
+		/* Keeps neighbouring chord names from touching when the text under one
+		   is barely wider than the chord itself. */
+		padding-right: 0.6em;
+		font-weight: 700;
+		color: var(--color-chord);
+		white-space: nowrap;
+	}
+
+	.text {
+		display: block;
+		/* The parts carry the file's own spaces, including leading and trailing
+		   ones. Collapsing them would run words together. */
+		white-space: pre-wrap;
+		overflow-wrap: break-word;
+	}
+
+	/* A line where no part has a chord. No chord row at all, so the lyric sits
+	   tight under the line before it — reserving blank space would nearly
+	   double the height of a song. Parts become plain inline text, so they wrap
+	   like an ordinary paragraph. */
+	.line--no-chords {
+		margin-top: 0;
+	}
+	.line--no-chords .part,
+	.line--no-chords .text {
+		display: inline;
+		max-width: none;
+	}
+	.line--no-chords .chord {
+		display: none;
+	}
+
+	/* An intro or interlude: chords on their own row, spaced out, with no empty
+	   lyric row beneath. */
+	.line--chords-only .chord {
+		padding-right: 1.6em;
+	}
+
+	/* A note at the end of a line, like (x2). On a line with chords it belongs
+	   on the lyric row, so it is pushed down past the chord row. */
+	.annotation {
+		display: inline-block;
+		vertical-align: top;
+		font-size: 0.8em;
+		color: var(--color-quiet);
+	}
+	.line--chorded .annotation {
+		padding-top: var(--chord-row);
+	}
+}
