@@ -376,7 +376,7 @@ faster. This also means printing in black (Phase 2) loses nothing.
 | --- | --- |
 | The song list is loading | Grey placeholder rows, roughly song-shaped. Not a spinner. The page must not jump when the real list arrives. |
 | The search finds nothing | "No songs match *xyz*" and a clear button. Not a blank screen. |
-| A song is loading | Title and artist appear straight away if we already have them from the list. The rest fills in after. |
+| A song is loading | Grey placeholder bars where the title, artist and song will be. The same shape however you arrived at the page. |
 | Unknown slug (404 from the backend) | "That song isn't here" and a link back to the list. |
 | The backend is down | A plain message and a Retry button. No error dump, no spinner forever. |
 

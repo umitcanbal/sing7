@@ -1,5 +1,6 @@
 import { useAtom } from "jotai";
 import { Pause, Play } from "lucide-react";
+import { Button } from "../ui/Button";
 import {
 	isAutoScrollingAtom,
 	MAX_SPEED,
@@ -23,19 +24,18 @@ export function ScrollBar() {
 	return (
 		<div className="scroll-bar fixed inset-x-0 bottom-0 border-t border-neutral-200 bg-white/95">
 			<div className="mx-auto flex h-full max-w-3xl items-center gap-4 px-4">
-				<button
-					type="button"
+				<Button
+					variant="icon"
 					onClick={() => setAutoScrolling((running) => !running)}
 					aria-label={isAutoScrolling ? "Pause scrolling" : "Start scrolling"}
 					aria-pressed={isAutoScrolling}
-					className="flex size-12 shrink-0 items-center justify-center rounded-full bg-chord text-white hover:opacity-90"
 				>
 					{isAutoScrolling ? (
 						<Pause className="size-6" fill="currentColor" />
 					) : (
 						<Play className="size-6" fill="currentColor" />
 					)}
-				</button>
+				</Button>
 
 				<label className="flex flex-1 items-center gap-3 text-sm text-quiet">
 					<span className="shrink-0">speed</span>
