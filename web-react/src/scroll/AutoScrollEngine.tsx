@@ -1,8 +1,16 @@
 import type { RefObject } from "react";
 import { useAutoScroll } from "./useAutoScroll";
+import { useScrollKeys } from "./useScrollKeys";
+import { useWakeLock } from "./useWakeLock";
 
 /*
- * Runs the auto-scroll. Draws nothing.
+ * Runs everything about the auto-scroll. Draws nothing.
+ *
+ * Three hooks, three separate concerns, deliberately not merged: the frame loop
+ * that moves the page, the spacebar that starts and stops it, and the wake lock
+ * that keeps the screen on. They have different lifetimes and different ways of
+ * failing — the key listener has to be alive while the scroll is *stopped*, and
+ * the wake lock is allowed to fail silently while nothing else is.
  *
  * A component that returns null looks odd until you notice that useAutoScroll
  * has no markup to contribute — it drives the window, it does not draw. So its
@@ -29,5 +37,7 @@ export function AutoScrollEngine({
 	songBodyRef: RefObject<HTMLElement | null>;
 }) {
 	useAutoScroll(songBodyRef);
+	useScrollKeys();
+	useWakeLock();
 	return null;
 }

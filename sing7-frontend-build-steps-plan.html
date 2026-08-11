@@ -302,14 +302,14 @@
       "id": "step-08",
       "title": "Step 8 — Spacebar and keeping the screen awake",
       "plan": "<p><strong>Goal:\u003c/strong> both hands can stay on the guitar.\u003c/p><p>Small, but this is the step that makes the app usable for its actual purpose.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li>A window key listener: space toggles play, and cancels the browser's own page-down.\u003c/li><li>Ignored while the search box has focus.\u003c/li><li><code>useWakeLock\u003c/code> — ask when the scroll starts, release when it stops, do nothing if the browser refuses, and ask again when the tab becomes visible if the scroll is still running.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> press space and it starts, press space again and it stops — and the page does not jump a screen down like it normally would. Then start a scroll and leave the machine alone for longer than your screen timeout: it should stay on, and go back to normal once you pause.\u003c/p><p><strong>Worth asking about:\u003c/strong> the wake lock, since it is the one browser feature here that can silently do nothing, and the app is written to not care when it does.\u003c/p>",
-      "status": "proposed",
+      "status": "resolved",
       "entries": []
     },
     {
       "id": "step-09",
       "title": "Step 9 — When things are loading, empty or broken",
       "plan": "<p><strong>Goal:\u003c/strong> the app behaves when nothing is going right.\u003c/p><p>Deliberately near the end: to build these you need something that can actually be loading or failing, and now everything can.\u003c/p><p><strong>What gets built\u003c/strong>\u003c/p><ul><li><code>Skeleton\u003c/code> — grey song-shaped rows while the list loads.\u003c/li><li>\"No songs match…\" with a clear button.\u003c/li><li>Title and artist showing immediately on a song page when we already have them from the list.\u003c/li><li>The not-found screen for an unknown slug.\u003c/li><li><code>ErrorState\u003c/code> with a Retry button, wired to Query's <code>refetch()\u003c/code>.\u003c/li>\u003c/ul><p><strong>What you will see:\u003c/strong> stop the Go server and reload — a plain message and a Retry button, no spinner forever and no error dump. Start the server again, press Retry, and the app comes back without a page reload. Search for <code>zzz\u003c/code> and get a sentence instead of a blank screen.\u003c/p><p><strong>Worth asking about:\u003c/strong> why skeleton rows instead of a spinner, and why the page must not jump when the real list arrives.\u003c/p>",
-      "status": "proposed",
+      "status": "resolved",
       "entries": []
     },
     {

@@ -280,13 +280,9 @@ The feature that makes the app worth building.
   300%. A number you can learn beats a position you guess.
 - **100% = 10 pixels per second.** This must be one named constant in the code, not a feel.
   At this rate a typical rendered line — a chord row plus a lyric row, around 60px tall —
-  takes about six seconds to pass. It is tuned in one place and both apps use the same
-  number, or the React build and the SvelteKit build will scroll at different speeds.
-
-  This started at 20 and was tuned down once real songs were on screen, which is what the
-  requirement always said to do. At 20, the speed people actually wanted was 50% — so that
-  became 100%, and the slider now opens on the right speed instead of needing dragging down
-  for every song.
+  takes about six seconds to pass. Tuned down from an initial 20 once real songs were on
+  screen. It is tuned in one place and both apps use the same number, or the React build and
+  the SvelteKit build will scroll at different speeds.
 - **Scrolling by hand stops it,** exactly as if you pressed pause.
 - **It stops at the bottom,** and the button goes back to "play".
 - **The speed is remembered** across songs and reloads. One setting for all songs, not one

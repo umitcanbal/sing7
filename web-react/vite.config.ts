@@ -21,5 +21,8 @@ export default defineConfig({
 		// Component tests need a document to render into. jsdom is a fake browser
 		// running in Node — enough DOM to mount React and read the markup back.
 		environment: "jsdom",
+		// Unmounts whatever each test rendered. Without it, listeners from earlier
+		// tests are still live and answer events meant for the current one.
+		setupFiles: ["./src/test-setup.ts"],
 	},
 });

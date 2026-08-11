@@ -109,6 +109,7 @@ web-react/
     │   ├── atoms.ts             the two Jotai atoms
     │   ├── useAutoScroll.ts     the scroll engine
     │   ├── AutoScrollEngine.tsx runs the engine, draws nothing
+    │   ├── useScrollKeys.ts     the spacebar
     │   ├── useWakeLock.ts       keeping the screen awake
     │   └── ScrollBar.tsx        the floating control bar
     └── ui/
@@ -258,7 +259,7 @@ If two rows ever claim to own the same thing, that is the bug.
 | Search text | the address, `?q=` | `SearchBox` | `filterSongs`, `SearchBox` |
 | The filtered list | **nowhere** — worked out from the two rows above | — | the song-list screen |
 | Scroll speed % | Jotai + localStorage | `ScrollBar` | `ScrollBar`, `useAutoScroll` |
-| Is auto-scrolling | Jotai, memory only | `ScrollBar`, the spacebar, `useAutoScroll` at the bottom | `ScrollBar`, `useAutoScroll`, `useWakeLock` |
+| Is auto-scrolling | Jotai, memory only | `ScrollBar`, `useScrollKeys`, `useAutoScroll` at the end | `ScrollBar`, `useAutoScroll`, `useWakeLock` |
 | Scroll position | **the browser** | the user, and `useAutoScroll` | `useAutoScroll` |
 | Where the song starts on the page | a ref on `SongBody` | React, when it renders | `useAutoScroll`, to know where to jump |
 | The position expected after each frame | a ref in `useAutoScroll` | `useAutoScroll` | `useAutoScroll`, to spot a hand scroll |
@@ -389,22 +390,14 @@ the app and the easiest to get subtly wrong, so it gets one home.
 `null`. The song page renders `<AutoScrollEngine songBodyRef={...} />` rather than calling the
 hook itself.
 
-The reason is placement first and speed second. The hook has no markup to contribute — it
-drives the window, it does not draw — so its host should draw nothing either. "Who scrolls the
-page" and "who draws the song" are unrelated jobs.
+Two reasons. The hook has no markup to contribute — it drives the window, it does not draw — so
+its host should draw nothing either. And **a subscription costs exactly what the subscribing
+component renders**: the hook subscribes to `scrollSpeedAtom`, so with it in the song page every
+step of a slider drag re-rendered every section, line and part, while the frame loop was trying
+to scroll. Behind the boundary the same change costs a `null` compared against a `null`,
+whatever the length of the song.
 
-The speed matters too, and the rule generalises: **a subscription costs exactly what the
-subscribing component renders.** The hook subscribes to `scrollSpeedAtom`, and the slider fires
-on every step of a drag. With the hook in the song page, each step re-rendered every section,
-line and part — all returning identical markup, all while the frame loop was trying to scroll.
-Behind the boundary the same change costs one function call, one ref assignment, and a `null`
-compared against a `null`, whatever the length of the song.
-
-It also removes an awkward detail: hooks cannot be conditional, so calling `useAutoScroll` in
-the page meant calling it above the loading and not-found early returns. As a rendered
-component, the engine simply exists only when there is a song.
-
-`AutoScrollEngine.test.tsx` holds this line — it renders the same tree both ways and counts.
+`AutoScrollEngine.test.tsx` holds the line — it renders the same tree both ways and counts.
 
 ### How it moves
 
@@ -435,14 +428,30 @@ the browser keeps the remainder.
 - **A hand scroll stops it.** The trick: our own `scrollBy` also fires a scroll event, so we
   cannot simply listen for scroll events. The hook records the position it expects after each
   frame; if the real position differs by more than a pixel or two, a human did it, so it pauses.
-- **The spacebar**, on a window key listener: toggle play, and cancel the browser's default
-  page-down. Ignored when the search box has focus.
+
+### useScrollKeys
+
+The spacebar, on a window key listener: toggle play, and cancel the browser's default page-down.
+
+Its own hook and its own effect: moving the page and reading the keyboard are different jobs,
+each effect's dependency list then says only what that one thing needs, and `useScrollKeys` can
+be tested with no fake scroll position and no hand-driven frames.
+
+It ignores space when the focused element does something with the key itself: a text field types
+a space, and **a focused button activates**. That second case is the one that bites — after you
+click play with the mouse the button keeps focus, so space activates it. Toggling as well would
+cancel out and the key would look dead.
+
+It toggles with the updater form, so it never reads the atom and never re-renders.
 
 ### useWakeLock
 
 A separate hook, because it is a different concern with its own failure rules: ask when
 scrolling starts, release when it stops, do nothing at all if the browser refuses, and ask again
 when the tab becomes visible if the scroll is still running.
+
+Releasing matters as much as asking — a lock that is never released keeps the machine awake
+forever — so it is released when the scroll stops *and* when the page goes away.
 
 ---
 
