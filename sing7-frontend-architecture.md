@@ -108,6 +108,7 @@ web-react/
     ├── scroll/                  everything about auto-scroll
     │   ├── atoms.ts             the two Jotai atoms
     │   ├── useAutoScroll.ts     the scroll engine
+    │   ├── AutoScrollEngine.tsx runs the engine, draws nothing
     │   ├── useWakeLock.ts       keeping the screen awake
     │   └── ScrollBar.tsx        the floating control bar
     └── ui/
@@ -382,13 +383,36 @@ Svelte.
 All the scroll behaviour lives in one hook, `useAutoScroll`. It is the most stateful thing in
 the app and the easiest to get subtly wrong, so it gets one home.
 
+### The hook is not called by the song page
+
+`useAutoScroll` is called inside `AutoScrollEngine`, a component that runs it and returns
+`null`. The song page renders `<AutoScrollEngine songBodyRef={...} />` rather than calling the
+hook itself.
+
+The reason is placement first and speed second. The hook has no markup to contribute — it
+drives the window, it does not draw — so its host should draw nothing either. "Who scrolls the
+page" and "who draws the song" are unrelated jobs.
+
+The speed matters too, and the rule generalises: **a subscription costs exactly what the
+subscribing component renders.** The hook subscribes to `scrollSpeedAtom`, and the slider fires
+on every step of a drag. With the hook in the song page, each step re-rendered every section,
+line and part — all returning identical markup, all while the frame loop was trying to scroll.
+Behind the boundary the same change costs one function call, one ref assignment, and a `null`
+compared against a `null`, whatever the length of the song.
+
+It also removes an awkward detail: hooks cannot be conditional, so calling `useAutoScroll` in
+the page meant calling it above the loading and not-found early returns. As a rendered
+component, the engine simply exists only when there is a song.
+
+`AutoScrollEngine.test.tsx` holds this line — it renders the same tree both ways and counts.
+
 ### How it moves
 
 A `requestAnimationFrame` loop. Each frame it works out how far to move from the time since the
 last frame and the speed:
 
 ```ts
-const PIXELS_PER_SECOND_AT_100 = 20;   // the one named constant
+const PIXELS_PER_SECOND_AT_100 = 10;   // the one named constant, tuned on real songs
 
 pixels = (speedPercent / 100) * PIXELS_PER_SECOND_AT_100 * secondsSinceLastFrame;
 window.scrollBy(0, pixels);
@@ -401,10 +425,13 @@ the browser keeps the remainder.
 ### What the hook owns
 
 - The frame loop, started and stopped by `isAutoScrollingAtom`.
-- **Where it starts.** On play: if the page has not been scrolled yet, or we are at the bottom,
-  jump so the first line of the song sits under the top edge; otherwise carry on from here. It
+- **Where it starts.** On play: if the page has not been scrolled yet, or we are at the end,
+  jump so the first line of the song lands a lead-in below the top edge — about a quarter of the
+  window down, so it is not gone the moment the scroll starts; otherwise carry on from here. It
   finds that position from a ref on `SongBody`.
-- **Stopping at the bottom**, and flipping the button back to play.
+- **Stopping at the end of the song**, not the end of the page, and flipping the button back to
+  play. The song block carries its own tail space, so its bottom edge already allows for the
+  control bar.
 - **A hand scroll stops it.** The trick: our own `scrollBy` also fires a scroll event, so we
   cannot simply listen for scroll events. The hook records the position it expects after each
   frame; if the real position differs by more than a pixel or two, a human did it, so it pauses.
@@ -453,7 +480,7 @@ a fresh design.
 | The requirements document, all of it | Routing library (SvelteKit has its own) |
 | The folder grouping: by feature, same names | How state is held (Svelte runes instead of Jotai) |
 | The component split: Body / Section / Line / Part | Component file syntax |
-| The 20 pixels-per-second constant | Test runner setup details |
+| The 10 pixels-per-second constant | Test runner setup details |
 | Tailwind, and the same `@theme` values | |
 | The generated webrpc client | |
 | What is tested, and the test cases | |

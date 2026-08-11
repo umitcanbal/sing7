@@ -7,6 +7,15 @@
 }
 
 /*
+ * The height of the floating control bar, in one place. The bar is this tall
+ * and the song's tail space is exactly the same, so the last line can always
+ * scroll clear above the bar. Two rules, one number — they cannot drift apart.
+ */
+:root {
+	--scroll-bar-height: 4.5rem;
+}
+
+/*
  * The chord-over-lyric block. This is the one piece of real layout in the app,
  * so it lives here as named classes rather than a long string of utilities.
  *
@@ -100,5 +109,31 @@
 		column-gap: 0.25rem;
 		font-family: var(--font-mono);
 		line-height: 1.6;
+	}
+
+	.scroll-bar {
+		height: var(--scroll-bar-height);
+	}
+
+	/*
+	 * Blank space at the end of the song, the same height as the control bar.
+	 * It belongs to the song block on purpose: the scroll engine measures the
+	 * song's bottom edge to know where to stop, and including the tail means
+	 * stopping there leaves the last line just clear of the bar.
+	 */
+	.song-tail {
+		padding-bottom: var(--scroll-bar-height);
+	}
+
+	/*
+	 * Room at the very bottom of the page for the floating bar to sit over.
+	 * Without it the bar covers the last of the page and there is nothing left
+	 * to scroll, so that content can never be read at all.
+	 *
+	 * This is a different job from .song-tail: that one clears the last lyric
+	 * line, this one clears whatever comes after the song.
+	 */
+	.page-tail {
+		padding-bottom: calc(var(--scroll-bar-height) + 2rem);
 	}
 }

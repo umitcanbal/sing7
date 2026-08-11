@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useRef } from "react";
 import { useSong } from "../api/queries";
 import { SongNotFoundError } from "../rpc/client.gen";
+import { AutoScrollEngine } from "../scroll/AutoScrollEngine";
+import { ScrollBar } from "../scroll/ScrollBar";
 import { SongBody } from "../song/SongBody";
 import { SongMeta } from "../song/SongMeta";
 import { SongNotes } from "../song/SongNotes";
@@ -17,6 +20,11 @@ function SongScreen() {
 	const { slug } = Route.useParams();
 	const { data: song, isPending, error } = useSong(slug);
 
+	// The scroll engine measures this element to know where the song starts and
+	// where it ends. The engine itself is rendered below rather than called here,
+	// so that a slider drag re-renders it instead of the whole song.
+	const songBodyRef = useRef<HTMLDivElement>(null);
+
 	if (isPending) return <p className="p-8 text-quiet">Loading…</p>;
 
 	// The backend answers an unknown slug with a real 404, and the generated
@@ -32,15 +40,18 @@ function SongScreen() {
 	if (error) return <p className="p-8 text-quiet">Error: {error.message}</p>;
 
 	return (
-		<div className="mx-auto max-w-3xl px-4 py-8">
+		<div className="page-tail mx-auto max-w-3xl px-4 pt-8">
 			<Link to="/" className="text-sm text-quiet hover:text-lyric">
 				‹ back
 			</Link>
 
 			<SongMeta title={song.title} artist={song.artist} meta={song.meta} />
 			<StrumGrid patterns={song.strum} />
-			<SongBody sections={song.sections} />
+			<SongBody ref={songBodyRef} sections={song.sections} />
 			<SongNotes notes={song.meta.notes ?? []} />
+
+			<ScrollBar />
+			<AutoScrollEngine songBodyRef={songBodyRef} />
 		</div>
 	);
 }
