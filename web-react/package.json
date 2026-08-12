@@ -8,7 +8,10 @@
 		"build": "tsc -b && vite build",
 		"typecheck": "tsc -b",
 		"test": "vitest run",
+		"test:e2e": "playwright test",
 		"lint": "biome check .",
+		"format": "biome check --write .",
+		"check": "pnpm lint && pnpm typecheck && pnpm test",
 		"preview": "vite preview"
 	},
 	"dependencies": {
@@ -23,6 +26,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.7",
+		"@playwright/test": "^1.62.1",
 		"@tailwindcss/vite": "^4.3.3",
 		"@tanstack/router-plugin": "^1.168.27",
 		"@testing-library/react": "^16.3.2",

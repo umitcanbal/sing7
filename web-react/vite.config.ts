@@ -18,6 +18,9 @@ export default defineConfig({
 		},
 	},
 	test: {
+		// Only the unit tests. Vitest's default pattern would also pick up the
+		// Playwright spec in e2e/, which needs a real browser and would fail here.
+		include: ["src/**/*.test.{ts,tsx}"],
 		// Component tests need a document to render into. jsdom is a fake browser
 		// running in Node — enough DOM to mount React and read the markup back.
 		environment: "jsdom",

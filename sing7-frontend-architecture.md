@@ -472,10 +472,27 @@ Enough tests to catch what would break silently, and no more.
 **Playwright** for one end-to-end run, not a suite: open the app, type in the search box, check
 the address gained `?q=`, open a song, press space, check the page moved.
 
+It exists because every Vitest case mounts one piece on its own, in jsdom, with hand-written
+data — so they would all pass with the router unwired, the proxy broken or the page failing to
+mount. Nothing else starts the real app. It runs against the real Go server and asserts on real
+songs, so both servers must be up; `webServer` reuses a dev server that is already running.
+
 **Biome** for lint and format, one `biome.json`.
 
 **Not tested on purpose:** the generated rpc client (not our code), Tailwind classes (a
 screenshot test breaks on every design tweak), and TanStack Query itself.
+
+### Commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | the dev server |
+| `pnpm check` | lint, then types, then unit tests — the one to run before committing |
+| `pnpm lint` / `pnpm format` | Biome, reporting or fixing |
+| `pnpm typecheck` | `tsc -b`. Vite strips types without checking them, so this is the only thing that does |
+| `pnpm test` | Vitest, unit tests only |
+| `pnpm test:e2e` | Playwright. Needs the Go server up; starts the dev server if it is not |
+| `pnpm build` | production build |
 
 ---
 
