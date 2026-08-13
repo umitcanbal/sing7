@@ -17,7 +17,7 @@ import {
  * The speed is a percentage with the number next to it, because a number you
  * can learn beats a position you have to guess.
  */
-export function ScrollBar() {
+export function ScrollPanel() {
 	const [isAutoScrolling, setAutoScrolling] = useAtom(isAutoScrollingAtom);
 	const [speed, setSpeed] = useAtom(scrollSpeedAtom);
 

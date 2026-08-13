@@ -16,7 +16,7 @@ export function useSongList() {
 export function useSong(slug: string) {
 	return useQuery({
 		queryKey: api.queryKey.getSong({ slug }),
-		queryFn: () => api.getSong({ slug }),
+		queryFn: ({ signal }) => api.getSong({ slug }, undefined, signal),
 		select: (data) => data.song,
 	});
 }

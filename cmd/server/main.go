@@ -36,7 +36,6 @@ func main() {
 }
 
 func newRouter(library *store.SongStore) *http.ServeMux {
-	log.Printf("helloo!!")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.Handle("/rpc/", httpapi.NewSongServiceServer(httpapi.NewSongService(library)))
@@ -45,7 +44,6 @@ func newRouter(library *store.SongStore) *http.ServeMux {
 
 func logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("hellooo22!!")
 		log.Printf("%s %s", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})

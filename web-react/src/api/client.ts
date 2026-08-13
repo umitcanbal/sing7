@@ -6,4 +6,17 @@ import { SongService } from "../rpc/client.gen";
 const baseUrl = import.meta.env.VITE_API_URL ?? "";
 
 // One client for the whole app. Every backend call goes through this.
-export const api = new SongService(baseUrl, fetch);
+// export const api = new SongService(baseUrl, fetch);
+
+const TIMEOUT_MS = 5_000;
+
+const fetchWithTimeout: typeof fetch = (input, init) =>
+	fetch(input, {
+		...init,
+		signal: AbortSignal.any([
+			...(init?.signal ? [init.signal] : []),
+			AbortSignal.timeout(TIMEOUT_MS),
+		]),
+	});
+
+export const api = new SongService(baseUrl, fetchWithTimeout);

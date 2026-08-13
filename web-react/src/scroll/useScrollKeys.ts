@@ -30,6 +30,7 @@ function handlesSpaceItself(target: EventTarget | null): boolean {
 
 	switch (target.tagName) {
 		case "INPUT":
+			return (target as HTMLInputElement).type !== "range";
 		case "TEXTAREA":
 		case "SELECT":
 		case "BUTTON":

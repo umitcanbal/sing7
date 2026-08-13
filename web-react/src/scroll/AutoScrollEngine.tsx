@@ -1,4 +1,6 @@
-import type { RefObject } from "react";
+import { useSetAtom } from "jotai";
+import { type RefObject, useEffect } from "react";
+import { isAutoScrollingAtom } from "./atoms";
 import { useAutoScroll } from "./useAutoScroll";
 import { useScrollKeys } from "./useScrollKeys";
 import { useWakeLock } from "./useWakeLock";
@@ -36,6 +38,15 @@ export function AutoScrollEngine({
 }: {
 	songBodyRef: RefObject<HTMLElement | null>;
 }) {
+	const setAutoScrolling = useSetAtom(isAutoScrollingAtom);
+
+	// Stops the scroll when you leave a song. This relies on the only way out of a
+	// song being "‹ back" to the list, which unmounts this component. Add a
+	// song-to-song link and this stops firing — it will need `slug` in the deps.
+	useEffect(() => {
+		return () => setAutoScrolling(false);
+	}, [setAutoScrolling]);
+
 	useAutoScroll(songBodyRef);
 	useScrollKeys();
 	useWakeLock();

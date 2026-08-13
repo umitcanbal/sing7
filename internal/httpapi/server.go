@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"time"
 
 	"sing7/internal/song"
 	"sing7/internal/store"
@@ -18,7 +17,6 @@ func NewSongService(s *store.SongStore) *SongService {
 }
 
 func (s *SongService) ListSongs(_ context.Context, q *string) ([]*SongListItem, error) {
-	time.Sleep(time.Second)
 	query := ""
 	if q != nil {
 		query = *q
@@ -32,7 +30,6 @@ func (s *SongService) ListSongs(_ context.Context, q *string) ([]*SongListItem, 
 }
 
 func (s *SongService) GetSong(_ context.Context, slug string) (*Song, error) {
-	time.Sleep(time.Second)
 	sng, ok := s.store.Get(slug)
 	if !ok {
 		return nil, ErrSongNotFound

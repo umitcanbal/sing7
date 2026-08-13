@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { useSong } from "../api/queries";
 import { SongNotFoundError } from "../rpc/client.gen";
 import { AutoScrollEngine } from "../scroll/AutoScrollEngine";
-import { ScrollBar } from "../scroll/ScrollBar";
+import { ScrollPanel } from "../scroll/ScrollPanel";
 import { SongBody } from "../song/SongBody";
 import { SongMeta } from "../song/SongMeta";
 import { SongNotes } from "../song/SongNotes";
@@ -90,7 +90,7 @@ function SongScreen() {
 			<SongBody ref={songBodyRef} sections={song.sections} />
 			<SongNotes notes={song.meta.notes ?? []} />
 
-			<ScrollBar />
+			<ScrollPanel />
 			<AutoScrollEngine songBodyRef={songBodyRef} />
 		</Page>
 	);

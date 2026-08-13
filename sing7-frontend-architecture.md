@@ -111,7 +111,7 @@ web-react/
     │   ├── AutoScrollEngine.tsx runs the engine, draws nothing
     │   ├── useScrollKeys.ts     the spacebar
     │   ├── useWakeLock.ts       keeping the screen awake
-    │   └── ScrollBar.tsx        the floating control bar
+    │   └── ScrollPanel.tsx        the floating control bar
     └── ui/
         ├── Button.tsx
         ├── Skeleton.tsx
@@ -258,8 +258,8 @@ If two rows ever claim to own the same thing, that is the bug.
 | One full song | TanStack Query cache | `useSong(slug)` | the song screen |
 | Search text | the address, `?q=` | `SearchBox` | `filterSongs`, `SearchBox` |
 | The filtered list | **nowhere** — worked out from the two rows above | — | the song-list screen |
-| Scroll speed % | Jotai + localStorage | `ScrollBar` | `ScrollBar`, `useAutoScroll` |
-| Is auto-scrolling | Jotai, memory only | `ScrollBar`, `useScrollKeys`, `useAutoScroll` at the end | `ScrollBar`, `useAutoScroll`, `useWakeLock` |
+| Scroll speed % | Jotai + localStorage | `ScrollPanel` | `ScrollPanel`, `useAutoScroll` |
+| Is auto-scrolling | Jotai, memory only | `ScrollPanel`, `useScrollKeys`, `useAutoScroll` at the end | `ScrollPanel`, `useAutoScroll`, `useWakeLock` |
 | Scroll position | **the browser** | the user, and `useAutoScroll` | `useAutoScroll` |
 | Where the song starts on the page | a ref on `SongBody` | React, when it renders | `useAutoScroll`, to know where to jump |
 | The position expected after each frame | a ref in `useAutoScroll` | `useAutoScroll` | `useAutoScroll`, to spot a hand scroll |
@@ -328,7 +328,7 @@ songs.$slug.tsx           the route: fetch, handle loading/404
     └── SongSection       one part of the song ([Verse 1] or no name)
         └── SongLine      one line, and the (x2) note at its end
             └── ChordPart chord on top, its own text underneath
-└── ScrollBar             floating at the bottom
+└── ScrollPanel             floating at the bottom
 ```
 
 ### ChordPart
