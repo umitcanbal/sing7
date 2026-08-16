@@ -3,8 +3,8 @@ package httpapi
 import (
 	"context"
 
-	"sing7/internal/store"
 	"sing7/internal/song"
+	"sing7/internal/store"
 )
 
 // SongService implements SongServiceServer by delegating to the store.

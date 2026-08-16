@@ -108,8 +108,10 @@ web-react/
     ├── scroll/                  everything about auto-scroll
     │   ├── atoms.ts             the two Jotai atoms
     │   ├── useAutoScroll.ts     the scroll engine
+    │   ├── AutoScrollEngine.tsx runs the engine, draws nothing
+    │   ├── useScrollKeys.ts     the spacebar
     │   ├── useWakeLock.ts       keeping the screen awake
-    │   └── ScrollBar.tsx        the floating control bar
+    │   └── ScrollPanel.tsx        the floating control bar
     └── ui/
         ├── Button.tsx
         ├── Skeleton.tsx
@@ -256,8 +258,8 @@ If two rows ever claim to own the same thing, that is the bug.
 | One full song | TanStack Query cache | `useSong(slug)` | the song screen |
 | Search text | the address, `?q=` | `SearchBox` | `filterSongs`, `SearchBox` |
 | The filtered list | **nowhere** — worked out from the two rows above | — | the song-list screen |
-| Scroll speed % | Jotai + localStorage | `ScrollBar` | `ScrollBar`, `useAutoScroll` |
-| Is auto-scrolling | Jotai, memory only | `ScrollBar`, the spacebar, `useAutoScroll` at the bottom | `ScrollBar`, `useAutoScroll`, `useWakeLock` |
+| Scroll speed % | Jotai + localStorage | `ScrollPanel` | `ScrollPanel`, `useAutoScroll` |
+| Is auto-scrolling | Jotai, memory only | `ScrollPanel`, `useScrollKeys`, `useAutoScroll` at the end | `ScrollPanel`, `useAutoScroll`, `useWakeLock` |
 | Scroll position | **the browser** | the user, and `useAutoScroll` | `useAutoScroll` |
 | Where the song starts on the page | a ref on `SongBody` | React, when it renders | `useAutoScroll`, to know where to jump |
 | The position expected after each frame | a ref in `useAutoScroll` | `useAutoScroll` | `useAutoScroll`, to spot a hand scroll |
@@ -326,7 +328,7 @@ songs.$slug.tsx           the route: fetch, handle loading/404
     └── SongSection       one part of the song ([Verse 1] or no name)
         └── SongLine      one line, and the (x2) note at its end
             └── ChordPart chord on top, its own text underneath
-└── ScrollBar             floating at the bottom
+└── ScrollPanel             floating at the bottom
 ```
 
 ### ChordPart
@@ -382,13 +384,28 @@ Svelte.
 All the scroll behaviour lives in one hook, `useAutoScroll`. It is the most stateful thing in
 the app and the easiest to get subtly wrong, so it gets one home.
 
+### The hook is not called by the song page
+
+`useAutoScroll` is called inside `AutoScrollEngine`, a component that runs it and returns
+`null`. The song page renders `<AutoScrollEngine songBodyRef={...} />` rather than calling the
+hook itself.
+
+Two reasons. The hook has no markup to contribute — it drives the window, it does not draw — so
+its host should draw nothing either. And **a subscription costs exactly what the subscribing
+component renders**: the hook subscribes to `scrollSpeedAtom`, so with it in the song page every
+step of a slider drag re-rendered every section, line and part, while the frame loop was trying
+to scroll. Behind the boundary the same change costs a `null` compared against a `null`,
+whatever the length of the song.
+
+`AutoScrollEngine.test.tsx` holds the line — it renders the same tree both ways and counts.
+
 ### How it moves
 
 A `requestAnimationFrame` loop. Each frame it works out how far to move from the time since the
 last frame and the speed:
 
 ```ts
-const PIXELS_PER_SECOND_AT_100 = 20;   // the one named constant
+const PIXELS_PER_SECOND_AT_100 = 10;   // the one named constant, tuned on real songs
 
 pixels = (speedPercent / 100) * PIXELS_PER_SECOND_AT_100 * secondsSinceLastFrame;
 window.scrollBy(0, pixels);
@@ -401,21 +418,40 @@ the browser keeps the remainder.
 ### What the hook owns
 
 - The frame loop, started and stopped by `isAutoScrollingAtom`.
-- **Where it starts.** On play: if the page has not been scrolled yet, or we are at the bottom,
-  jump so the first line of the song sits under the top edge; otherwise carry on from here. It
+- **Where it starts.** On play: if the page has not been scrolled yet, or we are at the end,
+  jump so the first line of the song lands a lead-in below the top edge — about a quarter of the
+  window down, so it is not gone the moment the scroll starts; otherwise carry on from here. It
   finds that position from a ref on `SongBody`.
-- **Stopping at the bottom**, and flipping the button back to play.
+- **Stopping at the end of the song**, not the end of the page, and flipping the button back to
+  play. The song block carries its own tail space, so its bottom edge already allows for the
+  control bar.
 - **A hand scroll stops it.** The trick: our own `scrollBy` also fires a scroll event, so we
   cannot simply listen for scroll events. The hook records the position it expects after each
   frame; if the real position differs by more than a pixel or two, a human did it, so it pauses.
-- **The spacebar**, on a window key listener: toggle play, and cancel the browser's default
-  page-down. Ignored when the search box has focus.
+
+### useScrollKeys
+
+The spacebar, on a window key listener: toggle play, and cancel the browser's default page-down.
+
+Its own hook and its own effect: moving the page and reading the keyboard are different jobs,
+each effect's dependency list then says only what that one thing needs, and `useScrollKeys` can
+be tested with no fake scroll position and no hand-driven frames.
+
+It ignores space when the focused element does something with the key itself: a text field types
+a space, and **a focused button activates**. That second case is the one that bites — after you
+click play with the mouse the button keeps focus, so space activates it. Toggling as well would
+cancel out and the key would look dead.
+
+It toggles with the updater form, so it never reads the atom and never re-renders.
 
 ### useWakeLock
 
 A separate hook, because it is a different concern with its own failure rules: ask when
 scrolling starts, release when it stops, do nothing at all if the browser refuses, and ask again
 when the tab becomes visible if the scroll is still running.
+
+Releasing matters as much as asking — a lock that is never released keeps the machine awake
+forever — so it is released when the scroll stops *and* when the page goes away.
 
 ---
 
@@ -436,10 +472,27 @@ Enough tests to catch what would break silently, and no more.
 **Playwright** for one end-to-end run, not a suite: open the app, type in the search box, check
 the address gained `?q=`, open a song, press space, check the page moved.
 
+It exists because every Vitest case mounts one piece on its own, in jsdom, with hand-written
+data — so they would all pass with the router unwired, the proxy broken or the page failing to
+mount. Nothing else starts the real app. It runs against the real Go server and asserts on real
+songs, so both servers must be up; `webServer` reuses a dev server that is already running.
+
 **Biome** for lint and format, one `biome.json`.
 
 **Not tested on purpose:** the generated rpc client (not our code), Tailwind classes (a
 screenshot test breaks on every design tweak), and TanStack Query itself.
+
+### Commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | the dev server |
+| `pnpm check` | lint, then types, then unit tests — the one to run before committing |
+| `pnpm lint` / `pnpm format` | Biome, reporting or fixing |
+| `pnpm typecheck` | `tsc -b`. Vite strips types without checking them, so this is the only thing that does |
+| `pnpm test` | Vitest, unit tests only |
+| `pnpm test:e2e` | Playwright. Needs the Go server up; starts the dev server if it is not |
+| `pnpm build` | production build |
 
 ---
 
@@ -453,7 +506,7 @@ a fresh design.
 | The requirements document, all of it | Routing library (SvelteKit has its own) |
 | The folder grouping: by feature, same names | How state is held (Svelte runes instead of Jotai) |
 | The component split: Body / Section / Line / Part | Component file syntax |
-| The 20 pixels-per-second constant | Test runner setup details |
+| The 10 pixels-per-second constant | Test runner setup details |
 | Tailwind, and the same `@theme` values | |
 | The generated webrpc client | |
 | What is tested, and the test cases | |

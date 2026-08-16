@@ -278,12 +278,11 @@ The feature that makes the app worth building.
   we use it or not. Ignore it while the user is typing in the search box.
 - **Speed is a percentage** — a slider with the number next to it. The range is about 10% to
   300%. A number you can learn beats a position you guess.
-- **100% = 20 pixels per second.** This must be one named constant in the code, not a feel.
-  It is set so a typical rendered line — a chord row plus a lyric row, around 60px tall —
-  takes about three seconds to pass, which is roughly how long a sung line lasts. The
-  constant can be tuned once real songs are on screen, but it is tuned in one place and both
-  apps use the same number, or the React build and the SvelteKit build will scroll at
-  different speeds.
+- **100% = 10 pixels per second.** This must be one named constant in the code, not a feel.
+  At this rate a typical rendered line — a chord row plus a lyric row, around 60px tall —
+  takes about six seconds to pass. Tuned down from an initial 20 once real songs were on
+  screen. It is tuned in one place and both apps use the same number, or the React build and
+  the SvelteKit build will scroll at different speeds.
 - **Scrolling by hand stops it,** exactly as if you pressed pause.
 - **It stops at the bottom,** and the button goes back to "play".
 - **The speed is remembered** across songs and reloads. One setting for all songs, not one
@@ -300,12 +299,26 @@ info line and strum grid scroll away — you read those before you started.
 
 | When you press play… | What happens |
 | --- | --- |
-| You just opened the song and have not scrolled | Jump to the first line of the song, then start scrolling. |
+| You just opened the song and have not scrolled | Jump so the first line sits a lead-in below the top edge, then start scrolling. |
 | You stopped in the middle to work on a chord | Carry on from exactly where you are. No jump. |
-| The scroll reached the bottom and stopped | Jump back to the first line of the song and start again. |
+| The scroll reached the end and stopped | Jump back to the first line of the song and start again. |
 
 The song block is one element, and the browser reports how far down it starts, so this works
 for any song whatever sits above the words.
+
+**The first line does not land against the top edge.** Every other line of the song enters at
+the bottom and travels a whole screen before it is gone; a first line pinned to the top edge
+would get none of that, and would start disappearing the instant you pressed play. So the jump
+stops **short** of the song's top by a lead-in, and the first line lands about a quarter of the
+way down the window with the next few lines visible under it.
+
+The lead-in is a fraction of the window height, not a fixed number of pixels, so it suits a
+laptop and a large monitor alike. It is one named constant, tuned by feel like the speed.
+
+**This is done by scrolling less far, not by padding the song.** Padding above the song big
+enough to matter would show as a large empty gap before you ever pressed play. The page is left
+alone; only where the jump lands moves. (The other end is the opposite: the tail space really is
+part of the song block, because the last line must clear the control bar and then stay put.)
 
 ### Keeping the screen awake
 
@@ -363,7 +376,7 @@ faster. This also means printing in black (Phase 2) loses nothing.
 | --- | --- |
 | The song list is loading | Grey placeholder rows, roughly song-shaped. Not a spinner. The page must not jump when the real list arrives. |
 | The search finds nothing | "No songs match *xyz*" and a clear button. Not a blank screen. |
-| A song is loading | Title and artist appear straight away if we already have them from the list. The rest fills in after. |
+| A song is loading | Grey placeholder bars where the title, artist and song will be. The same shape however you arrived at the page. |
 | Unknown slug (404 from the backend) | "That song isn't here" and a link back to the list. |
 | The backend is down | A plain message and a Retry button. No error dump, no spinner forever. |
 

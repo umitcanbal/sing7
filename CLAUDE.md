@@ -30,6 +30,14 @@ English is not the owner's first language. **Write in simple, everyday, informal
 - **Sounding amateur is fine.** Being correct and clear is what matters, not sounding smart.
 - In chat, also keep it to **3–4 sentences** unless asked for more.
 
+## Working with the owner
+
+- **Explain every shell command before running it, then ask yes/no.** In one or two plain
+  sentences: what it does, whether it only reads or actually changes something, and whether it
+  talks to anything outside this machine. Then wait. **This applies to read-only commands too** —
+  the point is that the owner always knows what is about to happen on their machine, not that
+  dangerous commands get a gate.
+
 ## Decision protocol
 
 Whenever an implementation choice affects what the user sees or hears — chord alignment, what gets dropped, how something is rendered, any behaviour the owner could reasonably disagree with — **stop and ask before implementing**. Do not silently pick a side. State the options, give a recommendation, and wait for confirmation. The owner cannot push back on a decision they were never told was made.
@@ -92,5 +100,7 @@ Then the explanatory sections:
 7. **Notable decisions & surprises** — trade-offs made, corpus/edge-case surprises, and any open questions for the owner to decide.
 8. **See it working** — the commands/tests to run.
 9. **Where it fits** — the change's place in the build plan.
+
+**Sidebar navigation.** Every page also gets a left-hand sidebar listing the kickoff prompt and each numbered section as a clickable link that jumps straight to it — reuse the same sticky `.toc` sidebar already built for the plan-thread pages (small link list, current section highlighted while scrolling), don't invent a new look. Include it even on a short page; the point is a steady habit, not saving space on a particular page.
 
 When the owner suggests improvements to this structure, update this template so future artifacts get better.
